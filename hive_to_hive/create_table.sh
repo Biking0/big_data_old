@@ -1,16 +1,17 @@
+#!/bin/bash
+# ***************************************************************************
+# 文件名称：create_table.sh
+# 功能描述：shell代码头
+# 输 入 表：
+# 输 出 表：
+# 创 建 者：hyn
+# 创建日期：20200616
+# 修改日志：
+# 修改日期：
+# ***************************************************************************
+# 程序调用格式：sh create_table.sh
+# ***************************************************************************
 
-beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/default' -n ocdp -p 1q2w1q@W
 
-beeline -u "jdbc:hive2://hua-dlzx2-a0202:10000/default" -n ocdp -p 1q2w1q@W -e "show databases"
-
-# 本地集群
-beeline -u "jdbc:hive2://hua-dlzx2-a0202:10000/default" -n ocdp -p 1q2w1q@W -e "show databases"
-
-# 远程集群
-beeline -u "jdbc:hive2://192.168.190.88:10000/default" -n ocdp -p 1q2w1q@W -e "show databases"
-
-
-# 远程主机
-ssh hive@192.168.190.91
 
 
