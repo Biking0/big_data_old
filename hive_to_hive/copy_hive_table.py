@@ -44,9 +44,11 @@ def get_table_struct(table_name):
             print(data)
 
     print '###########'
+
+    # 过滤建表语句
     data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
                                                                                                          '').replace(
-        '\'\'', '\'|\'').replace('\n', '').replace('  ', '').replace('`', '')
+        '\'\'', '\'|\'').replace('\n', '').replace('`', '')
     print data
 
     local_localtion = data.find('LOCATION')
@@ -54,6 +56,9 @@ def get_table_struct(table_name):
     result = data[0:local_localtion]
     print '***********'
     print result
+
+    # 去除多余空格
+    result = ' '.join(result.split())
 
     create_table(result)
 
@@ -64,5 +69,11 @@ def create_table(create_table_sql):
 
     print create_table_sh
 
+    # 执行建表语句
+    create_result = os.popen(create_table_sh).readlines()
 
-get_table_struct('tb_si_cu_voma_limit_whitelist_day')
+    print '### create_result'
+    print create_result
+
+
+get_table_struct('tb_si_ct_voma_call_traffic_day')

@@ -55,3 +55,6 @@ hadoop fs -ls -d hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu
 beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -e 'show create table tb_si_cu_voma_limit_whitelist_day' > test.txt
 
 show create table tb_si_cu_voma_limit_whitelist_day
+
+# 测试建表
+
