@@ -76,6 +76,11 @@ def create_table(create_table_sql):
     print create_result
 
 
+# 导出sql到文件
+def export_sql():
+    pass
+
+
 # 启动入口
 if __name__ == '__main__':
 
