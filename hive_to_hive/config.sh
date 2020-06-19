@@ -15,6 +15,8 @@ beeline -u "jdbc:hive2://192.168.190.88:10000/default" -n demo -p %Usbr7mx
 
 beeline -u "jdbc:hive2://192.168.190.88:10000/default" -n demo -p %Usbr7mx -e "show databases"
 
+beeline -u "jdbc:hive2://192.168.190.88:10000/default" -n hive -p %Usbr7mx -e "show databases"
+
 beeline -u "jdbc:hive2://192.168.190.88:10000/default" -n ocdp -p 1q2w1q@W -e "show databases"
 beeline -u "jdbc:hive2://192.168.190.88:10000/csap"
 
@@ -57,4 +59,16 @@ beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -e 'show create table tb_si_
 show create table tb_si_cu_voma_limit_whitelist_day
 
 # 测试建表
+
+# 远程往本地拷贝数据
+hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day/statis_date=20170617 hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/tb_si_cu_voma_limit_whitelist_day
+
+
+tb_si_cu_voma_limit_whitelist_day
+
+hadoop fs -ls hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day | more
+
+hadoop fs -ls hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day | more
+
+sh trans_data_suyan2ocdp.sh tb_si_cu_voma_limit_whitelist_day 20170629 tb_si_cu_voma_limit_whitelist_day
 

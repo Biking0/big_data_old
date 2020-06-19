@@ -76,4 +76,16 @@ def create_table(create_table_sql):
     print create_result
 
 
-get_table_struct('tb_si_ct_voma_call_traffic_day')
+# 启动入口
+if __name__ == '__main__':
+
+    # 输入表明参数处理
+    input_length = len(sys.argv)
+    print 'input_str: ', len(sys.argv)
+
+    monitor_server = 1
+    if input_length == 2:
+        get_table_struct(sys.argv[1])
+
+    else:
+        print '输入表名参数'
