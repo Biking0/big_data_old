@@ -70,7 +70,7 @@ def create_table(create_table_sql):
     print create_table_sh
 
     # 执行建表语句
-    create_result = os.popen(create_table_sh).readlines()
+    create_result = os.popen(create_table_sh).readlines() 
 
     print '### create_result'
     print create_result
@@ -91,7 +91,7 @@ def read_table_name():
         print 1,' #########################'
         print line
         get_table_struct(line)
-        break
+        # break
 
 
 # 启动入口
