@@ -22,7 +22,7 @@ import sys
 old_hive = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -e 'show create table "
 
 # 连接新集群
-new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/default' -n ocdp -p 1q2w1q@W -e \" "
+new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1q@W -e \" "
 
 
 # 获取表结构，封装完整hive创建语句
@@ -34,8 +34,8 @@ def get_table_struct(table_name):
     f.write(str(table_struct_str))
     f.close()
 
-    print table_struct_sh
-    print table_struct_str
+    #print table_struct_sh
+    #print table_struct_str
 
     data = ''
     with open("./test1.txt", "r") as f:  # 打开文件
@@ -49,13 +49,13 @@ def get_table_struct(table_name):
     data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
                                                                                                          '').replace(
         '\'\'', '\'|\'').replace('\n', '').replace('`', '')
-    print data
+    # print data
 
     local_localtion = data.find('LOCATION')
-    print local_localtion
+    # print local_localtion
     result = data[0:local_localtion]
     print '***********'
-    print result
+    #print result
 
     # 去除多余空格
     result = ' '.join(result.split())
@@ -78,20 +78,32 @@ def create_table(create_table_sql):
 
 # 导出sql到文件
 def export_sql():
-    print 123
+    # print 123
     pass
+
+
+def read_table_name():
+    f = open('./test_table_name.txt', 'r')
+    i=1
+    for line in f.readlines():
+        line = line.strip('\n')
+
+        print 1,' #########################'
+        print line
+        get_table_struct(line)
+        break
 
 
 # 启动入口
 if __name__ == '__main__':
-
-    # 输入表明参数处理
-    input_length = len(sys.argv)
-    print 'input_str: ', len(sys.argv)
-
-    monitor_server = 1
-    if input_length == 2:
-        get_table_struct(sys.argv[1])
-
-    else:
-        print '输入表名参数'
+    read_table_name()
+    # # 输入表明参数处理
+    # input_length = len(sys.argv)
+    # print 'input_str: ', len(sys.argv)
+    #
+    # monitor_server = 1
+    # if input_length == 2:
+    #     get_table_struct(sys.argv[1])
+    #
+    # else:
+    #     print '输入表名参数'
