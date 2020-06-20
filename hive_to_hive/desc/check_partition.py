@@ -23,7 +23,7 @@ def desc_parser(line):
             continue
 
         if 'Partition' not in line_list[1]:
-            print line_list[1], line_list[2], line_list[3],
+            print line_list[1], line_list[2], line_list[3], 
             print '#'
 
         # 检测分区数量
