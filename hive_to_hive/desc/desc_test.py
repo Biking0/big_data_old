@@ -23,15 +23,7 @@ def desc_parser():
         if 'Partition' not in line_list[1]:
             print line_list[1], line_list[2], line_list[3],
             print '#'
-        # if 'NULL' in line_list[1]:
-        #     continue
-        #
-        # if 'NULL' in line_list[1]:
-        #     continue
-
-
-
-
+       
         # # 忽略表头
         # if line_list[2] == 'col_name':
         #     continue
