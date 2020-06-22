@@ -19,6 +19,7 @@ import sys
 # 旧集群
 old_hdfs = 'hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db'
 
+
 # 新集群
 new_hdfs = 'hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive'
 
