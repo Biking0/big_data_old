@@ -34,8 +34,8 @@ def get_table_struct(table_name):
     f.write(str(table_struct_str))
     f.close()
 
-    #print table_struct_sh
-    #print table_struct_str
+    # print table_struct_sh
+    # print table_struct_str
 
     data = ''
     with open("./test1.txt", "r") as f:  # 打开文件
@@ -46,20 +46,37 @@ def get_table_struct(table_name):
     print '###########'
 
     # 过滤建表语句
+    # data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
+    #                                                                                                      '').replace(
+    #     '\'\'', '\'|\'').replace('\n', '').replace('`', '').replace(' _c0 ', ' `_c0` ').replace(' _c1 ', ' `_c1` ').replace(' _c2 ',
+    #                                                                                             ' `_c2` ').replace(
+    #     ' _c3 ', ' `_c3` ').replace(' _c4 ', ' `_c4` ').replace(' _c5  ', ' `_c5 ` ').replace(' _c6  ',
+    #                                                                                           ' `_c6 ` ').replace(
+    #     ' _c7  ', ' `_c7 ` ').replace(' _c8  ', ' `_c8 ` ').replace(' _c9 ', ' `_c9 ` ').replace(' _c10 ',
+    #                                                                                              ' `_c10` ').replace(
+    #     ' _c11 ', ' `_c11` ').replace(' _c12 ', ' `_c12` ').replace(' _c13 ', ' `_c13`').replace(' _c14 ',
+    #                                                                                              ' `_c14` ').replace(
+    #     ' _c15 ', ' `_c15` ')
+
     data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
                                                                                                          '').replace(
         '\'\'', '\'|\'').replace('\n', '').replace('`', '')
-    # print data
 
+    # 去除LOCATION
     local_localtion = data.find('LOCATION')
+
     # print local_localtion
     result = data[0:local_localtion]
-    print '***********'
-    #print result
 
     # 去除多余空格
     result = ' '.join(result.split())
 
+    # create_table_sql_sh = 'echo ' + result + ' ; >> test_create_table.txt\n'
+    #
+    # os.popen(create_table_sql_sh)
+
+    create_table_sql = open('./create_table.txt', 'a+')
+    create_table_sql.write(result + ' ;\n')
     create_table(result)
 
 
@@ -70,10 +87,10 @@ def create_table(create_table_sql):
     print create_table_sh
 
     # 执行建表语句
-    create_result = os.popen(create_table_sh).readlines() 
+    create_result = os.popen(create_table_sh).readlines()
 
     print '### create_result'
-    print create_result
+    # print create_result
 
 
 # 导出sql到文件
@@ -84,14 +101,14 @@ def export_sql():
 
 def read_table_name():
     f = open('./test_table_name.txt', 'r')
-    i=1
+    i = 1
     for line in f.readlines():
         line = line.strip('\n')
 
-        print 1,' #########################'
+        print 1, ' #########################'
         print line
         get_table_struct(line)
-        # break
+        break
 
 
 # 启动入口

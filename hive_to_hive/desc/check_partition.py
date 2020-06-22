@@ -49,13 +49,13 @@ def desc_parser(line):
                 if len(partition_list) > 1:
                     print '### 多个分区', line, partition_list
                     check_result = open('/home/hive/hyn/hive_to_hive/check_result.txt', 'a+')
-                    check_result.write(line + ' ' + str(partition_list)+'\n')
+                    check_result.write(line + ' ' + str(partition_list) + '\n')
                     check_result.close()
 
                 else:
                     print '### 1个分区', line, partition_list
                     check_result = open('/home/hive/hyn/hive_to_hive/desc/check_result.txt', 'a+')
-                    check_result.write(line + ' ' + str(partition_list)+'\n')
+                    check_result.write(line + ' ' + str(partition_list) + '\n')
                     check_result.close()
 
 
