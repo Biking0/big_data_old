@@ -72,3 +72,10 @@ hadoop fs -ls hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_vo
 
 sh trans_data_suyan2ocdp.sh tb_si_cu_voma_limit_whitelist_day 20170629 tb_si_cu_voma_limit_whitelist_day
 
+# 登陆vertica
+
+
+# 测试hive库稽核，hive库关联
+create database data_check;
+use database_check;
+create table test_hyn as select * from default.test_zs_20200529;
