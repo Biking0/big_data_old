@@ -4,6 +4,7 @@ import sys
 
 # desc_test.py
 
+# 解析desc表结构
 def desc_parser():
     desc_list = open('./desc.txt', 'r').readlines()
 
@@ -22,14 +23,12 @@ def desc_parser():
 
         if 'Partition' not in line_list[1]:
             print line_list[1], line_list[2], line_list[3],
-            print '#'
-       
-        # # 忽略表头
-        # if line_list[2] == 'col_name':
-        #     continue
 
-        # if line[1] == ' ':
-        #     continue
+            # 封装表结构int字段
+            if line_list[2] == 'int':
+                result_list.append(line_list[1])
+
+            # print '#'
 
         # 检测分区数量
         if desc_list[i][2] == '#':
@@ -48,43 +47,18 @@ def desc_parser():
                         continue
                     print desc_list[j].split(' ')[1]
 
+                # 重要
                 break
 
             print desc_list[i]
             continue
-
-        # table_str=desc_list[i].replace(' ', '')
-        # print 'table_str',table_str
-        # # table_str=table_str.encode(encoding='utf8')
         #
-        # # list输出乱码,python2输出以16进制输出内容
-        #
-        #
-        #
-        # print table_str.split('|')
-        # print table_str.split('|')[3]
-        # print '\n'.join(table_str.split('|'))
 
         # break
 
-    # i = 1
-    # for line in f.readlines():
-    #     line = line.strip('\n')
-    #
-    #     # print 1, ' #########################'
-    #
-    #     if line[0] == '+':
-    #         continue
-    #
-    #     # if line[1] == ' ':
-    #     #     continue
-    #
-    #     if line[2] == '#':
-    #         print line
-    #         continue
-    #
-    #     print line.replace(' ','')
-    # break
+    # 封装表结构int字段
+    print 'int colume:'
+    print result_list
 
 
 desc_parser()

@@ -4,6 +4,19 @@ CREATE TABLE CHK_RESULT (
 ,DES_TBL        STRING          COMMENT '目标表名'
 ,CYCLICAL       STRING          COMMENT '周期'
 ,COUNT1         STRING          COMMENT '数据统计'
+,SUM1           STRING          COMMENT '求和'
+,REMARK         STRING          COMMENT '备注'
+,CHK_DT         string             COMMENT '检核时间'
+)
+ROW FORMAT DELIMITED FILEDS TERMINATED BY ' ';
+
+insert into table CHK_RESULT
+
+CREATE TABLE CHK_RESULT (
+ DATA_SOURCE    STRING          COMMENT '数据源'
+,DES_TBL        STRING          COMMENT '目标表名'
+,CYCLICAL       STRING          COMMENT '周期'
+,COUNT1         STRING          COMMENT '数据统计'
 ,SUM1           STRING          COMMENT '求和' sum(colume1-colume2-colume3)
 ,REMARK         STRING          COMMENT '备注'
 ,CHK_DT         int             COMMENT '检核时间'
@@ -21,6 +34,10 @@ ROW FORMAT DELIMITED FILEDS TERMINATED BY ' ';
 ,REMARK         STRING          COMMENT '备注'
 ,CHK_DT         int             COMMENT '检核时间'
 
+select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
+
+# 获取当前时间
+select from_unixtime(unix_timestamp());
 
 样例：
 hive原表

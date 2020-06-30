@@ -74,7 +74,13 @@ def read_table_name():
 
         print 1, ' #########################'
         print line
-        desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + line + ' \' > ./desc.txt'
+
+        # 生产环境
+        # desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + line + ' \' > ./desc.txt'
+
+        # 测试环境
+        desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + line + ' \' > ./desc.txt'
+
         print desc_sh
         os.popen(desc_sh).readlines()
         desc_parser(line)
