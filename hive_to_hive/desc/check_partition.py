@@ -48,7 +48,7 @@ def desc_parser(line):
 
                 if len(partition_list) > 1:
                     print '### 多个分区', line, partition_list
-                    check_result = open('/home/hive/hyn/hive_to_hive/check_result.txt', 'a+')
+                    check_result = open('/home/hive/hyn/hive_to_hive/desc/check_result.txt', 'a+')
                     check_result.write(line + ' ' + str(partition_list) + '\n')
                     check_result.close()
 
@@ -76,10 +76,10 @@ def read_table_name():
         print line
 
         # 生产环境
-        # desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + line + ' \' > ./desc.txt'
+        desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + line + ' \' > ./desc.txt'
 
         # 测试环境
-        desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + line + ' \' > ./desc.txt'
+        #desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + line + ' \' > ./desc.txt'
 
         print desc_sh
         os.popen(desc_sh).readlines()
