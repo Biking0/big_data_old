@@ -12,18 +12,29 @@ ROW FORMAT DELIMITED FILEDS TERMINATED BY ' ';
 
 insert into table CHK_RESULT
 
-CREATE TABLE CHK_RESULT (
- DATA_SOURCE    STRING          COMMENT '数据源'
-,DES_TBL        STRING          COMMENT '目标表名'
-,CYCLICAL       STRING          COMMENT '周期'
-,COUNT1         STRING          COMMENT '数据统计'
-,SUM1           STRING          COMMENT '求和' sum(colume1-colume2-colume3)
-,REMARK         STRING          COMMENT '备注'
-,CHK_DT         int             COMMENT '检核时间'
+# 稽核结果分区表
+create table chk_result (
+ data_source    string          comment '数据源'
+,des_tbl        string          comment '目标表名'
+,cyclical       string          comment '周期'
+,count1         string          comment '数据统计'
+,sum1           string          comment '求和'
+,remark         string          comment '备注'
+,chk_dt         string             comment '检核时间'
 )
-COMMENT '数据质量检核结果表'
-PARTITION BY (CHK_TD DATE)
-ROW FORMAT DELIMITED FILEDS TERMINATED BY ' ';
+partitioned by (static_date string)
+row format delimited fileds terminated by ' ';
+
+create table chk_result_test (
+ data_source    string          comment '数据源'
+,des_tbl        string          comment '目标表名'
+,cyclical       string          comment '周期'
+,count1         string          comment '数据统计'
+,sum1           string          comment '求和'
+,remark         string          comment '备注'
+,chk_dt         string             comment '检核时间'
+)
+partitioned by (static_date string)
 
 # 字段注释
  DATA_SOURCE    STRING          COMMENT '数据源'

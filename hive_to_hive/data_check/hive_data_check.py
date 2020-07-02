@@ -22,11 +22,17 @@ import sys
 import time
 import datetime
 
+# 生产环境
+# excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
+
+# 测试环境
+excute_desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e "
+
 
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    # desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + line + ' \' > ./desc.txt'
+    # desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
     # 测试环境
     desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
@@ -173,7 +179,7 @@ def check_partition(line):
             today = datetime.date.today()
             first = today.replace(day=1)
             last_month = first - datetime.timedelta(days=1)
-            last_month=last_month.strftime("%Y%m")
+            last_month = last_month.strftime("%Y%m")
             print '# last_month', last_month
 
         # 日分区，取前一天，前一个周期
@@ -195,7 +201,8 @@ def check_partition(line):
 def create_sql(table_name, table_int_list):
     # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
     sql_part1 = "select 'DATA_SOURCE','" + table_name + "','partition', count(*)"
-    sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) from loc_use_base_momth;"
+    sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + time.strftime("%Y%m%d", time.localtime(
+        time.time())) + " from " + table_name + ";"
 
     table_int_str = ''
     for i in range(len(table_int_list)):
@@ -208,7 +215,13 @@ def create_sql(table_name, table_int_list):
     sql = sql_part1 + sql_part2 + sql_part3
 
     print 'sql select :', sql
-    insert_table(sql)
+
+    # 执行查询
+    select_sql_sh = excute_desc_sh + ' \" ' + sql + ' \"'
+    print select_sql_sh
+    os.popen(select_sql_sh).readlines()
+
+    insert_table(table_name, sql)
 
     # 删除表结构文本文件
     delete_sh = 'rm ' + table_name + '.txt'
@@ -216,10 +229,17 @@ def create_sql(table_name, table_int_list):
 
 
 # 构造出sql，将查询结果插入稽核结果表中
-def insert_table(sql):
+def insert_table(table_name, sql):
     chk_table_name = 'chk_result'
     insert_sql = 'insert into table ' + chk_table_name + ' ' + sql
     print insert_sql
+
+    # 执行插入语句
+    insert_sql_sh = excute_desc_sh + ' \" ' + insert_sql + ' \" '
+    print insert_sql_sh
+    os.popen(insert_sql_sh).readlines()
+
+    export_chk_result(table_name)
 
 
 # 获取表结构
@@ -227,7 +247,16 @@ def get_table_struct(table_name):
     pass
 
 
-# 导出文件到数据
+# 导出稽核结果表到文件
+def export_chk_result(table_name):
+    export_sql = 'select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from chk_result;'
+
+    export_sh = excute_desc_sh + ' \" ' + export_sql + ' \" ' + ' >> chk_result.txt'
+
+    print 'export_sh', export_sh
+
+    os.popen(export_sh).readlines()
+
 
 # 对比数据，废弃该方法
 def diff_data():
