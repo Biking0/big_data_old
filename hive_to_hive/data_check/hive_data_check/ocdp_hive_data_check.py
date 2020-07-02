@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：hive_data_check.py
+# 文件名称：ocdp_hive_data_check.py
 # 功能描述：hive表数据稽核
 # 输 入 表：
 # 输 出 表：
@@ -10,7 +10,7 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python hive_data_check.py
+# 程序调用格式：python ocdp_hive_data_check.py
 # ***************************************************************************
 
 # 1. 分析hive库表结构，获取int字段，将所有表存到列表里
@@ -22,20 +22,23 @@ import sys
 import time
 import datetime
 
+
+
 # 生产环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
+excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e "
 
 # 测试环境
-excute_desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e "
+# excute_desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e "
 
 
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    # desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
     # 测试环境
-    desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
+    # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
     print desc_sh
     os.popen(desc_sh).readlines()
@@ -99,17 +102,14 @@ def desc_parser(table_name):
     print result_list
 
     # 分区检测
-    check_partition(table_name)
-
-    # 创建查询sql
-    create_sql(table_name, result_list)
+    check_partition(table_name, result_list)
 
 
 # 分区检测，构造分区，根据需要稽核的时间段，循环生成相应的分区，判断是否为分区表,line(table_name)
-def check_partition(line):
+def check_partition(line, result_list):
     desc_list = open('./' + line + '.txt', 'r').readlines()
 
-    result_list = []
+    # result_list = []
     partition_list = []
 
     for i in range(len(desc_list)):
@@ -183,26 +183,31 @@ def check_partition(line):
             print '# last_month', last_month
 
         # 日分区，取前一天，前一个周期
-        elif partition_list[0] == '':
+        elif partition_list[0] == 'statis_date':
             today = datetime.date.today()
 
             yestoday = today + datetime.timedelta(days=-1)
 
             print '# yestoday', yestoday
 
-            # 其他分区，先不检测，记录到文件
+            partition = 'statis_date=' + str(yestoday).replace('-','')
+
+        # 其他分区，先不检测，记录到文件
         else:
             chk_error = open('./chk_error.txt', 'w')
             chk_error.write(str(partition_list))
             chk_error.close()
 
+    # 创建查询sql
+    create_sql(line, result_list, partition)
+
 
 # 创建sql，进行查询,输入表名，int字段
-def create_sql(table_name, table_int_list):
+def create_sql(table_name, table_int_list, partition):
+
     # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
-    sql_part1 = "select 'DATA_SOURCE','" + table_name + "','partition', count(*)"
-    sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + time.strftime("%Y%m%d", time.localtime(
-        time.time())) + " from " + table_name + ";"
+    sql_part1 = "select 'DATA_SOURCE','" + table_name + "','"+partition+"', count(*)"
+    sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where "+partition+";"
 
     table_int_str = ''
     for i in range(len(table_int_list)):
@@ -219,7 +224,7 @@ def create_sql(table_name, table_int_list):
     # 执行查询
     select_sql_sh = excute_desc_sh + ' \" ' + sql + ' \"'
     print select_sql_sh
-    os.popen(select_sql_sh).readlines()
+    # os.popen(select_sql_sh).readlines()
 
     insert_table(table_name, sql)
 
@@ -231,7 +236,9 @@ def create_sql(table_name, table_int_list):
 # 构造出sql，将查询结果插入稽核结果表中
 def insert_table(table_name, sql):
     chk_table_name = 'chk_result'
-    insert_sql = 'insert into table ' + chk_table_name + ' ' + sql
+    insert_sql = " use csap; insert into table " + chk_table_name + " partition (static_date=" + time.strftime("%Y%m%d",
+                                                                                                               time.localtime(
+                                                                                                                   time.time())) + ") " + sql
     print insert_sql
 
     # 执行插入语句
@@ -249,7 +256,7 @@ def get_table_struct(table_name):
 
 # 导出稽核结果表到文件
 def export_chk_result(table_name):
-    export_sql = 'select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from chk_result;'
+    export_sql = 'use csap; select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from chk_result;'
 
     export_sh = excute_desc_sh + ' \" ' + export_sql + ' \" ' + ' >> chk_result.txt'
 
