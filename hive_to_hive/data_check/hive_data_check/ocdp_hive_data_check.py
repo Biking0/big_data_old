@@ -181,6 +181,7 @@ def check_partition(line, result_list):
             last_month = first - datetime.timedelta(days=1)
             last_month = last_month.strftime("%Y%m")
             print '# last_month', last_month
+            partition = 'partition_month=' + str(last_month).replace('-', '')
 
         # 日分区，取前一天，前一个周期
         elif partition_list[0] == 'statis_date':
@@ -190,7 +191,15 @@ def check_partition(line, result_list):
 
             print '# yestoday', yestoday
 
-            partition = 'statis_date=' + str(yestoday).replace('-','')
+            partition = 'statis_date=' + str(yestoday).replace('-', '')
+
+        elif partition_list[0] == 'statis_month':
+            today = datetime.date.today()
+            first = today.replace(day=1)
+            last_month = first - datetime.timedelta(days=1)
+            last_month = last_month.strftime("%Y%m")
+            print '# last_month', last_month
+            partition = 'statis_date=' + str(last_month).replace('-', '')
 
         # 其他分区，先不检测，记录到文件
         else:
@@ -204,18 +213,29 @@ def check_partition(line, result_list):
 
 # 创建sql，进行查询,输入表名，int字段
 def create_sql(table_name, table_int_list, partition):
+    sql_part1 = ''
+    sql_part3 = ''
 
-    # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
-    sql_part1 = "select 'DATA_SOURCE','" + table_name + "','"+partition+"', count(*)"
-    sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where "+partition+";"
+    # 无分区
+    if partition == '':
+        partition = 'no_partition'
+        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
+        sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " ;"
+
+    else:
+        # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
+        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
+
+        # todo 无分区表，增量数据无法稽核，全表可稽核
+        sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where " + partition + ";"
 
     table_int_str = ''
     for i in range(len(table_int_list)):
-        table_int_str = table_int_str + "nvl(sum(%s),'')," % (table_int_list[i])
+        table_int_str = table_int_str + "nvl(sum(%s),''),'_'," % (table_int_list[i])
 
     print 'table_int_str', table_int_str
 
-    sql_part2 = ",concat(%s)" % (table_int_str[0:-1])
+    sql_part2 = ",concat(%s)" % (table_int_str[0:-5])
 
     sql = sql_part1 + sql_part2 + sql_part3
 
@@ -246,7 +266,7 @@ def insert_table(table_name, sql):
     print insert_sql_sh
     os.popen(insert_sql_sh).readlines()
 
-    export_chk_result(table_name)
+    # export_chk_result(table_name)
 
 
 # 获取表结构
@@ -265,6 +285,13 @@ def export_chk_result(table_name):
     os.popen(export_sh).readlines()
 
 
+# 将苏研集群稽核表迁移到oadp集群
+def distcp_sy_to_ocdp():
+    # ocdp集群添加分区
+
+    add_partition_sh="beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
+
+
 # 对比数据，废弃该方法
 def diff_data():
     pass
@@ -280,7 +307,9 @@ def read_table_name():
         print 1, ' #########################'
         print line
         create_desc(line)
-        break
+
+        # 连续读取目标表
+        # break
 
 
 read_table_name()
