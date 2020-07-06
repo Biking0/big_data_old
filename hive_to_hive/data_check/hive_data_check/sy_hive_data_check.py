@@ -21,6 +21,8 @@ import os
 import sys
 import time
 import datetime
+import config
+import pubUtil
 
 # 生产环境
 # excute_desc_sh = "hive -e "
@@ -196,7 +198,7 @@ def check_partition(line, result_list):
             last_month = first - datetime.timedelta(days=1)
             last_month = last_month.strftime("%Y%m")
             print '# last_month', last_month
-            partition = 'statis_date=' + str(last_month).replace('-', '')
+            partition = 'statis_month=' + str(last_month).replace('-', '')
 
         # 其他分区，先不检测，记录到文件
         else:
@@ -307,6 +309,18 @@ def read_table_name():
 
         # 连续读取目标表
         # break
+
+
+# 运行之前清理结果表分区，添加重跑功能
+def clear_sy_partition():
+    # 清理苏研集群chk_result分区，insert overwrite，使用数据覆盖
+    sql = 'insert overwrite table chk_result partition(static_date=' + pubUtil.get_today() + ') select data_source,des_tbl,cyclical,count1,sum1,remark,chk_dt from chk_result where static_date=20091010'
+
+    clear_sql_sh = config.excute_sy_sh + sql + '\''
+
+    print clear_sql_sh
+
+    # 清理ocdp集群分区
 
 
 read_table_name()

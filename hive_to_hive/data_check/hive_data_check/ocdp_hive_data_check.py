@@ -21,12 +21,13 @@ import os
 import sys
 import time
 import datetime
-
-
+import config
+import pubUtil
 
 # 生产环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
 excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e "
+
 
 # 测试环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e "
@@ -289,7 +290,7 @@ def export_chk_result(table_name):
 def distcp_sy_to_ocdp():
     # ocdp集群添加分区
 
-    add_partition_sh="beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
+    add_partition_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
 
 
 # 对比数据，废弃该方法
@@ -310,6 +311,16 @@ def read_table_name():
 
         # 连续读取目标表
         # break
+
+
+# 运行之前清理结果表分区，添加重跑功能
+def clear_ocdp_partition():
+    # 清理ocdp集群分区
+    sql = "alter table chk_result drop if exists partition(static_date=" + pubUtil.get_today() + ");"
+
+    clear_sql_sh = config.excute_ocdp_sh + sql + '\''
+
+    print clear_sql_sh
 
 
 read_table_name()
