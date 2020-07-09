@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：ocdp_hive_data_check.py
+# 文件名称：multi_ocdp_hive_data_check.py
 # 功能描述：hive表数据稽核
 # 输 入 表：
 # 输 出 表：
@@ -10,7 +10,7 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python ocdp_hive_data_check.py
+# 程序调用格式：python multi_ocdp_hive_data_check.py
 # ***************************************************************************
 
 # 1. 分析hive库表结构，获取int字段，将所有表存到列表里
@@ -23,6 +23,7 @@ import time
 import datetime
 import config
 import pubUtil
+import threading
 
 # 生产环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
@@ -251,7 +252,7 @@ def create_sql(table_name, table_int_list, partition):
 
     # 删除表结构文本文件
     delete_sh = 'rm ' + table_name + '.txt'
-    os.popen(delete_sh).readlines()
+    # os.popen(delete_sh).readlines()
 
 
 # 构造出sql，将查询结果插入稽核结果表中
@@ -302,15 +303,85 @@ def diff_data():
 def read_table_name():
     f = open('/home/ocdp/hyn/data_check/hive_data_check/test_table_name.txt', 'r')
     i = 1
+
+    multi_list = []
+
     for line in f.readlines():
         line = line.strip('\n')
 
         print 1, ' #########################'
         print line
-        create_desc(line)
+        multi_list.append(line)
+
+        # 开始解析
+        # create_desc(line)
 
         # 连续读取目标表
         # break
+
+    multi_thread(multi_list)
+
+
+# 遍历列表
+def read_list(num, tar_list):
+    for i in tar_list:
+        try:
+            print 'table_name', i
+            create_desc(i)
+        except Exception as e:
+            print e
+            continue
+
+
+# 多线程
+def multi_thread(multi_list):
+
+    print 'multi_list',multi_list
+
+    print '1',multi_list[0:2]
+    print '2',list(multi_list[0:2])
+    # list分块，调用多线程
+    multi1 = threading.Thread(target=read_list, args=(5, multi_list[0:15]))
+    multi2 = threading.Thread(target=read_list, args=(5, multi_list[15:30]))
+    multi3 = threading.Thread(target=read_list, args=(5, multi_list[30:45]))
+    multi4 = threading.Thread(target=read_list, args=(5, multi_list[45:60]))
+    multi5 = threading.Thread(target=read_list, args=(5, multi_list[60:75]))
+    multi6 = threading.Thread(target=read_list, args=(5, multi_list[75:90]))
+    multi7 = threading.Thread(target=read_list, args=(5, multi_list[90:105]))
+    multi8 = threading.Thread(target=read_list, args=(5, multi_list[105:120]))
+    multi9 = threading.Thread(target=read_list, args=(5, multi_list[120:135]))
+    multi10 = threading.Thread(target=read_list, args=(5, multi_list[135:165]))
+    multi11 = threading.Thread(target=read_list, args=(5, multi_list[165:180]))
+    multi12 = threading.Thread(target=read_list, args=(5, multi_list[180:195]))
+    multi13 = threading.Thread(target=read_list, args=(5, multi_list[195:210]))
+    multi14 = threading.Thread(target=read_list, args=(5, multi_list[210:225]))
+    multi15 = threading.Thread(target=read_list, args=(5, multi_list[225:270]))
+    multi16 = threading.Thread(target=read_list, args=(5, multi_list[270:285]))
+    multi17 = threading.Thread(target=read_list, args=(5, multi_list[285:300]))
+    multi18 = threading.Thread(target=read_list, args=(5, multi_list[300:305]))
+    multi19 = threading.Thread(target=read_list, args=(5, multi_list[305:309]))
+    multi20 = threading.Thread(target=read_list, args=(5, multi_list[309:313]))
+
+    multi1.start()
+    multi2.start()
+    multi3.start()
+    multi4.start()
+    multi5.start()
+    multi6.start()
+    multi7.start()
+    multi8.start()
+    multi9.start()
+    multi10.start()
+    multi11.start()
+    multi12.start()
+    multi13.start()
+    multi14.start()
+    multi15.start()
+    multi16.start()
+    multi17.start()
+    multi18.start()
+    multi19.start()
+    multi20.start()
 
 
 # 运行之前清理结果表分区，添加重跑功能

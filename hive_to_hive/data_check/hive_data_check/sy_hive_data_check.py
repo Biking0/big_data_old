@@ -34,7 +34,7 @@ excute_desc_sh = "hive -e "
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + table_name + ' \' > /home/hive/hyn/data_check/' + table_name + '.txt'
 
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
@@ -46,7 +46,7 @@ def create_desc(table_name):
 
 # 解析desc表结构
 def desc_parser(table_name):
-    desc_list = open('./' + table_name + '.txt', 'r').readlines()
+    desc_list = open('/home/hive/hyn/data_check/' + table_name + '.txt', 'r').readlines()
 
     result_list = []
 
@@ -106,7 +106,7 @@ def desc_parser(table_name):
 
 # 分区检测，构造分区，根据需要稽核的时间段，循环生成相应的分区，判断是否为分区表,line(table_name)
 def check_partition(line, result_list):
-    desc_list = open('./' + line + '.txt', 'r').readlines()
+    desc_list = open('/home/hive/hyn/data_check/' + line + '.txt', 'r').readlines()
 
     # result_list = []
     partition_list = []
@@ -202,7 +202,7 @@ def check_partition(line, result_list):
 
         # 其他分区，先不检测，记录到文件
         else:
-            chk_error = open('./chk_error.txt', 'w')
+            chk_error = open('/home/hive/hyn/data_check/chk_error.txt', 'w')
             chk_error.write(str(partition_list))
             chk_error.close()
 
@@ -224,8 +224,6 @@ def create_sql(table_name, table_int_list, partition):
     else:
         # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
         sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
-
-        # todo 无分区表，增量数据无法稽核，全表可稽核
         sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where " + partition + ";"
 
     table_int_str = ''
@@ -255,7 +253,7 @@ def create_sql(table_name, table_int_list, partition):
 # 构造出sql，将查询结果插入稽核结果表中
 def insert_table(table_name, sql):
     chk_table_name = 'chk_result'
-    insert_sql = " use csap; insert into table " + chk_table_name + " partition (static_date=" + time.strftime("%Y%m%d",
+    insert_sql = " use csap;set mapred.reduce.tasks=10; insert into table " + chk_table_name + " partition (static_date=" + time.strftime("%Y%m%d",
                                                                                                                time.localtime(
                                                                                                                    time.time())) + ") " + sql
     print insert_sql
@@ -265,7 +263,11 @@ def insert_table(table_name, sql):
     print insert_sql_sh
     os.popen(insert_sql_sh).readlines()
 
+    # 导出数据到文件
     # export_chk_result(table_name)
+
+    # 苏研数据迁移到ocdp集群
+    # distcp_sy_to_ocdp()
 
 
 # 获取表结构
@@ -284,11 +286,29 @@ def export_chk_result(table_name):
     os.popen(export_sh).readlines()
 
 
-# 将苏研集群稽核表迁移到oadp集群
+# 将苏研集群稽核表数据迁移到oadp集群，先迁移数据后添加分区
 def distcp_sy_to_ocdp():
-    # ocdp集群添加分区
+    partition = 'static_date=' + pubUtil.get_today()
 
-    add_partition_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
+    # 迁移之前先清理
+    # clear_sh = "hadoop fs -rm -r hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/sy_chk_result/" + partition
+    sql = "alter table sy_chk_result drop if exists partition(static_date=" + pubUtil.get_today() + ");"
+    clear_sh = config.excute_ocdp_sh + '\' ' + sql + '\''
+    # 迁移数据不能用，使用mysql通信
+    distcp_sh = 'hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/chk_result/' + partition + ' hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/sy_chk_result/'
+
+    # 添加分区
+    add_partition_sql = "alter table sy_chk_result add if not exists partition(static_date=" + pubUtil.get_today() + ");"
+    add_partition_sh = config.excute_ocdp_sh + '\' ' + add_partition_sql + '\''
+
+    print 'clear_sh', clear_sh
+    print 'distcp_sh', distcp_sh
+    print 'add_partition_sh', add_partition_sh
+
+    # 执行迁移
+    os.popen(clear_sh)
+    # os.popen(distcp_sh)
+    # os.popen(add_partition_sh)
 
 
 # 对比数据，废弃该方法
@@ -298,7 +318,7 @@ def diff_data():
 
 # 读取表名
 def read_table_name():
-    f = open('./test_table_name.txt', 'r')
+    f = open('/home/hive/hyn/data_check/test_table_name.txt', 'r')
     i = 1
     for line in f.readlines():
         line = line.strip('\n')
@@ -310,6 +330,13 @@ def read_table_name():
         # 连续读取目标表
         # break
 
+    # 调用数据迁移,todo
+
+
+
+
+
+
 
 # 运行之前清理结果表分区，添加重跑功能
 def clear_sy_partition():
@@ -320,7 +347,10 @@ def clear_sy_partition():
 
     print clear_sql_sh
 
-    # 清理ocdp集群分区
+    # 执行清理，多线程运行不能清理分区
+    # os.popen(clear_sql_sh)
+
+    read_table_name()
 
 
-read_table_name()
+clear_sy_partition()

@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：ocdp_hive_data_check.py
+# 文件名称：sy_hive_data_check.py
 # 功能描述：hive表数据稽核
 # 输 入 表：
 # 输 出 表：
@@ -10,7 +10,7 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python ocdp_hive_data_check.py
+# 程序调用格式：python sy_hive_data_check.py
 # ***************************************************************************
 
 # 1. 分析hive库表结构，获取int字段，将所有表存到列表里
@@ -23,20 +23,19 @@ import time
 import datetime
 import config
 import pubUtil
+import threading
 
 # 生产环境
-# excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
-excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e "
-
+# excute_desc_sh = "hive -e "
 
 # 测试环境
-# excute_desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e "
+excute_desc_sh = "hive -e "
 
 
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' >> /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e 'desc  " + table_name + ' \' > /home/hive/hyn/data_check/' + table_name + '.txt'
 
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
@@ -48,7 +47,7 @@ def create_desc(table_name):
 
 # 解析desc表结构
 def desc_parser(table_name):
-    desc_list = open('/home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt', 'r').readlines()
+    desc_list = open('/home/hive/hyn/data_check/' + table_name + '.txt', 'r').readlines()
 
     result_list = []
 
@@ -108,7 +107,7 @@ def desc_parser(table_name):
 
 # 分区检测，构造分区，根据需要稽核的时间段，循环生成相应的分区，判断是否为分区表,line(table_name)
 def check_partition(line, result_list):
-    desc_list = open('/home/ocdp/hyn/data_check/hive_data_check/' + line + '.txt', 'r').readlines()
+    desc_list = open('/home/hive/hyn/data_check/' + line + '.txt', 'r').readlines()
 
     # result_list = []
     partition_list = []
@@ -200,11 +199,11 @@ def check_partition(line, result_list):
             last_month = first - datetime.timedelta(days=1)
             last_month = last_month.strftime("%Y%m")
             print '# last_month', last_month
-            partition = 'statis_date=' + str(last_month).replace('-', '')
+            partition = 'statis_month=' + str(last_month).replace('-', '')
 
         # 其他分区，先不检测，记录到文件
         else:
-            chk_error = open('/home/ocdp/hyn/data_check/hive_data_check/chk_error.txt', 'a+')
+            chk_error = open('/home/hive/hyn/data_check/chk_error.txt', 'w')
             chk_error.write(str(partition_list))
             chk_error.close()
 
@@ -226,8 +225,6 @@ def create_sql(table_name, table_int_list, partition):
     else:
         # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
         sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
-
-        # todo 无分区表，增量数据无法稽核，全表可稽核
         sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where " + partition + ";"
 
     table_int_str = ''
@@ -251,15 +248,16 @@ def create_sql(table_name, table_int_list, partition):
 
     # 删除表结构文本文件
     delete_sh = 'rm ' + table_name + '.txt'
-    os.popen(delete_sh).readlines()
+    # os.popen(delete_sh).readlines()
 
 
 # 构造出sql，将查询结果插入稽核结果表中
 def insert_table(table_name, sql):
     chk_table_name = 'chk_result'
-    insert_sql = " use csap; insert into table " + chk_table_name + " partition (static_date=" + time.strftime("%Y%m%d",
-                                                                                                               time.localtime(
-                                                                                                                   time.time())) + ") " + sql
+    insert_sql = " use csap;set mapred.reduce.tasks=10; insert into table " + chk_table_name + " partition (static_date=" + time.strftime(
+        "%Y%m%d",
+        time.localtime(
+            time.time())) + ") " + sql
     print insert_sql
 
     # 执行插入语句
@@ -267,7 +265,11 @@ def insert_table(table_name, sql):
     print insert_sql_sh
     os.popen(insert_sql_sh).readlines()
 
+    # 导出数据到文件
     # export_chk_result(table_name)
+
+    # 苏研数据迁移到ocdp集群
+    # distcp_sy_to_ocdp()
 
 
 # 获取表结构
@@ -277,20 +279,38 @@ def get_table_struct(table_name):
 
 # 导出稽核结果表到文件
 def export_chk_result(table_name):
-    export_sql = 'use csap; select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from chk_result;'
+    export_sql = "use csap; select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from %s;" % (table_name)
 
-    export_sh = excute_desc_sh + ' \" ' + export_sql + ' \" ' + ' >> chk_result.txt'
+    export_sh = excute_desc_sh + ' \" ' + export_sql + ' \" ' + ' >> %s.txt' % (table_name)
 
     print 'export_sh', export_sh
 
     os.popen(export_sh).readlines()
 
 
-# 将苏研集群稽核表迁移到oadp集群
+# 将苏研集群稽核表数据迁移到oadp集群，先迁移数据后添加分区
 def distcp_sy_to_ocdp():
-    # ocdp集群添加分区
+    partition = 'static_date=' + pubUtil.get_today()
 
-    add_partition_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
+    # 迁移之前先清理
+    # clear_sh = "hadoop fs -rm -r hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/sy_chk_result/" + partition
+    sql = "alter table sy_chk_result drop if exists partition(static_date=" + pubUtil.get_today() + ");"
+    clear_sh = config.excute_ocdp_sh + '\' ' + sql + '\''
+    # 迁移数据不能用，使用mysql通信
+    distcp_sh = 'hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/chk_result/' + partition + ' hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/sy_chk_result/'
+
+    # 添加分区
+    add_partition_sql = "alter table sy_chk_result add if not exists partition(static_date=" + pubUtil.get_today() + ");"
+    add_partition_sh = config.excute_ocdp_sh + '\' ' + add_partition_sql + '\''
+
+    print 'clear_sh', clear_sh
+    print 'distcp_sh', distcp_sh
+    print 'add_partition_sh', add_partition_sh
+
+    # 执行迁移
+    os.popen(clear_sh)
+    # os.popen(distcp_sh)
+    # os.popen(add_partition_sh)
 
 
 # 对比数据，废弃该方法
@@ -300,29 +320,101 @@ def diff_data():
 
 # 读取表名
 def read_table_name():
-    f = open('/home/ocdp/hyn/data_check/hive_data_check/test_table_name.txt', 'r')
+    f = open('/home/hive/hyn/data_check/test_table_name.txt', 'r')
     i = 1
+
+    multi_list = []
+
     for line in f.readlines():
         line = line.strip('\n')
 
         print 1, ' #########################'
         print line
-        create_desc(line)
+        multi_list.append(line)
+
+        # 开始解析
+        # create_desc(line)
 
         # 连续读取目标表
         # break
 
+    multi_thread(multi_list)
+
+
+# 遍历列表
+def read_list(num, tar_list):
+    for i in tar_list:
+        try:
+            print 'table_name', i
+            create_desc(i)
+        except Exception as e:
+            print e
+            continue
+
+
+# 多线程
+def multi_thread(multi_list):
+    print 'multi_list', multi_list
+
+    print '1', multi_list[0:2]
+    print '2', list(multi_list[0:2])
+    # list分块，调用多线程
+    multi1 = threading.Thread(target=read_list, args=(5, multi_list[0:15]))
+    multi2 = threading.Thread(target=read_list, args=(5, multi_list[15:30]))
+    multi3 = threading.Thread(target=read_list, args=(5, multi_list[30:45]))
+    multi4 = threading.Thread(target=read_list, args=(5, multi_list[45:60]))
+    multi5 = threading.Thread(target=read_list, args=(5, multi_list[60:75]))
+    multi6 = threading.Thread(target=read_list, args=(5, multi_list[75:90]))
+    multi7 = threading.Thread(target=read_list, args=(5, multi_list[90:105]))
+    multi8 = threading.Thread(target=read_list, args=(5, multi_list[105:120]))
+    multi9 = threading.Thread(target=read_list, args=(5, multi_list[120:135]))
+    multi10 = threading.Thread(target=read_list, args=(5, multi_list[135:165]))
+    multi11 = threading.Thread(target=read_list, args=(5, multi_list[165:180]))
+    multi12 = threading.Thread(target=read_list, args=(5, multi_list[180:195]))
+    multi13 = threading.Thread(target=read_list, args=(5, multi_list[195:210]))
+    multi14 = threading.Thread(target=read_list, args=(5, multi_list[210:225]))
+    multi15 = threading.Thread(target=read_list, args=(5, multi_list[225:270]))
+    multi16 = threading.Thread(target=read_list, args=(5, multi_list[270:285]))
+    multi17 = threading.Thread(target=read_list, args=(5, multi_list[285:300]))
+    multi18 = threading.Thread(target=read_list, args=(5, multi_list[300:305]))
+    multi19 = threading.Thread(target=read_list, args=(5, multi_list[305:309]))
+    multi20 = threading.Thread(target=read_list, args=(5, multi_list[309:313]))
+
+    multi1.start()
+    multi2.start()
+    multi3.start()
+    multi4.start()
+    multi5.start()
+    multi6.start()
+    multi7.start()
+    multi8.start()
+    multi9.start()
+    multi10.start()
+    multi11.start()
+    multi12.start()
+    multi13.start()
+    multi14.start()
+    multi15.start()
+    multi16.start()
+    multi17.start()
+    multi18.start()
+    multi19.start()
+    multi20.start()
+
 
 # 运行之前清理结果表分区，添加重跑功能
-def clear_ocdp_partition():
-    # 清理ocdp集群分区
-    sql = "alter table chk_result drop if exists partition(static_date=" + pubUtil.get_today() + ");"
+def clear_sy_partition():
+    # 清理苏研集群chk_result分区，insert overwrite，使用数据覆盖
+    sql = 'insert overwrite table chk_result partition(static_date=' + pubUtil.get_today() + ') select data_source,des_tbl,cyclical,count1,sum1,remark,chk_dt from chk_result where static_date=20091010'
 
-    clear_sql_sh = config.excute_ocdp_sh + sql + '\''
+    clear_sql_sh = config.excute_sy_sh + sql + '\''
 
     print clear_sql_sh
 
+    # 执行清理，多线程运行不能清理分区
     # os.popen(clear_sql_sh)
 
+    read_table_name()
 
-read_table_name()
+
+clear_sy_partition()
