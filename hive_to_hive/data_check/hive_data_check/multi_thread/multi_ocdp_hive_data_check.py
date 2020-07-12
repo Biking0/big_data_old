@@ -24,6 +24,7 @@ import datetime
 import config
 import pubUtil
 import threading
+from Queue import Queue
 
 # 生产环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
@@ -37,7 +38,7 @@ excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' >> /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
 
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
@@ -201,7 +202,7 @@ def check_partition(line, result_list):
             last_month = first - datetime.timedelta(days=1)
             last_month = last_month.strftime("%Y%m")
             print '# last_month', last_month
-            partition = 'statis_date=' + str(last_month).replace('-', '')
+            partition = 'statis_month=' + str(last_month).replace('-', '')
 
         # 其他分区，先不检测，记录到文件
         else:
@@ -307,7 +308,7 @@ def read_table_name():
     multi_list = []
 
     for line in f.readlines():
-        line = line.strip('\n')
+        line = line.strip('\n').replace(' ', '')
 
         print 1, ' #########################'
         print line
@@ -323,65 +324,43 @@ def read_table_name():
 
 
 # 遍历列表
-def read_list(num, tar_list):
-    for i in tar_list:
+def read_list(num, data_queque, result_queque):
+    for i in range(data_queque.qsize()):
         try:
-            print 'table_name', i
-            create_desc(i)
+            if not data_queque.empty():
+                # 出队列
+                table_name = data_queque.get()
+
+                print 'table_name', table_name
+                create_desc(table_name)
+
         except Exception as e:
             print e
+            f = open('./error_info.log', 'a+')
+            f.write(str(e))
+            f.close()
             continue
 
 
 # 多线程
 def multi_thread(multi_list):
+    print 'multi_list', multi_list
 
-    print 'multi_list',multi_list
+    data_queque = Queue()
+    result_queque = Queue()
 
-    print '1',multi_list[0:2]
-    print '2',list(multi_list[0:2])
+    # 数据放入队列
+    for i in range(len(multi_list)):
+        data_queque.put(multi_list[i])
+
+    # 设置并发数
+    a = 100
     # list分块，调用多线程
-    multi1 = threading.Thread(target=read_list, args=(5, multi_list[0:15]))
-    multi2 = threading.Thread(target=read_list, args=(5, multi_list[15:30]))
-    multi3 = threading.Thread(target=read_list, args=(5, multi_list[30:45]))
-    multi4 = threading.Thread(target=read_list, args=(5, multi_list[45:60]))
-    multi5 = threading.Thread(target=read_list, args=(5, multi_list[60:75]))
-    multi6 = threading.Thread(target=read_list, args=(5, multi_list[75:90]))
-    multi7 = threading.Thread(target=read_list, args=(5, multi_list[90:105]))
-    multi8 = threading.Thread(target=read_list, args=(5, multi_list[105:120]))
-    multi9 = threading.Thread(target=read_list, args=(5, multi_list[120:135]))
-    multi10 = threading.Thread(target=read_list, args=(5, multi_list[135:165]))
-    multi11 = threading.Thread(target=read_list, args=(5, multi_list[165:180]))
-    multi12 = threading.Thread(target=read_list, args=(5, multi_list[180:195]))
-    multi13 = threading.Thread(target=read_list, args=(5, multi_list[195:210]))
-    multi14 = threading.Thread(target=read_list, args=(5, multi_list[210:225]))
-    multi15 = threading.Thread(target=read_list, args=(5, multi_list[225:270]))
-    multi16 = threading.Thread(target=read_list, args=(5, multi_list[270:285]))
-    multi17 = threading.Thread(target=read_list, args=(5, multi_list[285:300]))
-    multi18 = threading.Thread(target=read_list, args=(5, multi_list[300:305]))
-    multi19 = threading.Thread(target=read_list, args=(5, multi_list[305:309]))
-    multi20 = threading.Thread(target=read_list, args=(5, multi_list[309:313]))
+    for i in range(a):
+        # list分块，调用多线程
+        multi1 = threading.Thread(target=read_list, args=(5, data_queque, result_queque))
 
-    multi1.start()
-    multi2.start()
-    multi3.start()
-    multi4.start()
-    multi5.start()
-    multi6.start()
-    multi7.start()
-    multi8.start()
-    multi9.start()
-    multi10.start()
-    multi11.start()
-    multi12.start()
-    multi13.start()
-    multi14.start()
-    multi15.start()
-    multi16.start()
-    multi17.start()
-    multi18.start()
-    multi19.start()
-    multi20.start()
+        multi1.start()
 
 
 # 运行之前清理结果表分区，添加重跑功能

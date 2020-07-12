@@ -98,16 +98,51 @@ def desc_parser(table_name):
 
         # break
 
+    # todo，检测最后一个string类型字段
+    end_string = ''
+    # 列表逆序
+    desc_list.reverse()
+    print '##################'
+    print desc_list
+    for i in range(len(desc_list)):
+
+        # 忽略其他行
+        if desc_list[i][0] == '+':
+            continue
+        line_list = desc_list[i].strip().replace(' ', '').replace('\t', '').replace('\n', '').split('|')
+
+        # 忽略分区
+        if line_list[1] == 'statis_date':
+            continue
+
+        # 忽略表头
+        if line_list[1] == 'col_name' or 'NULL' in line_list[1]:
+            continue
+
+        if 'Partition' not in line_list[1]:
+            print line_list[1], line_list[2], line_list[3]
+
+            print '########varchar', line_list[2][0:7]
+            # 逆序后找到第一个string类型字段
+            if line_list[2] == 'string' or line_list[2][0:7] == 'varchar':
+                end_string = line_list[1]
+
+                # 找到最后一个string，退出停止寻找
+                break
+                # result_list.append(line_list[1])
+
     # 封装表结构int字段
     print 'int colume:'
     print result_list
 
     # 分区检测
-    check_partition(table_name, result_list)
+    check_partition(table_name, result_list, end_string)
 
 
 # 分区检测，构造分区，根据需要稽核的时间段，循环生成相应的分区，判断是否为分区表,line(table_name)
-def check_partition(line, result_list):
+def check_partition(line, result_list, end_string):
+
+
     desc_list = open('/home/hive/hyn/data_check/' + line + '.txt', 'r').readlines()
 
     # result_list = []
@@ -209,23 +244,31 @@ def check_partition(line, result_list):
             chk_error.close()
 
     # 创建查询sql
-    create_sql(line, result_list, partition)
+    create_sql(line, result_list, partition, end_string)
 
 
 # 创建sql，进行查询,输入表名，int字段
-def create_sql(table_name, table_int_list, partition):
+def create_sql(table_name, table_int_list, partition, end_string):
     sql_part1 = ''
     sql_part3 = ''
+
+    # end_string为空，该表无string类型字段
+    if end_string == '':
+        sql_part4 = ",'no_string_col'"
+    else:
+        sql_part4 = ",sum(length(" + end_string + "))"
 
     # 无分区
     if partition == '':
         partition = 'no_partition'
-        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
+        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)" + sql_part4
         sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " ;"
 
     else:
         # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
-        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)"
+        sql_part1 = "select 'DATA_SOURCE','" + table_name + "','" + partition + "', count(*)" + sql_part4
+
+        # todo 无分区表，增量数据无法稽核，全表可稽核
         sql_part3 = ",'REMARK',from_unixtime(unix_timestamp()) " + " from " + table_name + " where " + partition + ";"
 
     table_int_str = ''
@@ -373,7 +416,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 70
+    a = 1
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程
