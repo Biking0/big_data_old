@@ -370,7 +370,7 @@ def read_table_name():
     multi_list = []
 
     for line in f.readlines():
-        line = line.strip('\n')
+        line = line.strip('\n').replace('\t','')
 
         print 1, ' #########################'
         print line
