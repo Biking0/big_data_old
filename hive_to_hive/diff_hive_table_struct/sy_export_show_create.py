@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：copy_hive_table.py
+# 文件名称：sy_export_show_create.py
 # 功能描述：迁移Hive表
 # 输 入 表：
 # 输 出 表：
@@ -10,7 +10,8 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python copy_hive_table.py
+# 程序调用格式：python sy_export_show_create.py
+
 # ***************************************************************************
 
 import os
@@ -22,11 +23,14 @@ import sys
 old_hive = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -e 'show create table "
 
 # 连接新集群
-new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1q@W -e \" "
+# new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1q@W -e \" "
+
+new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1q@W -e 'show create table "
 
 
 # 获取表结构，封装完整hive创建语句
 def get_table_struct(table_name):
+    # table_struct_sh = old_hive + table_name + '\' > test1.txt'
     table_struct_sh = old_hive + table_name + '\' > test1.txt'
 
     table_struct_str = os.popen(table_struct_sh).readlines()
@@ -77,12 +81,12 @@ def get_table_struct(table_name):
 
     create_table_sql = open('./create_table.txt', 'a+')
     create_table_sql.write(result + ' ;\n')
-    create_table(result)
+    # create_table(result)
 
 
 # 新集群建表操作
 def create_table(create_table_sql):
-    create_table_sh = new_hive + create_table_sql + '\"'
+    create_table_sh = old_hive + create_table_sql + '\"'
 
     print create_table_sh
 

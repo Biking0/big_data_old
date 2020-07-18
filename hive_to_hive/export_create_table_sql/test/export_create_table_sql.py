@@ -21,8 +21,8 @@ import os
 import sys
 import time
 import datetime
-import config
-import pubUtil
+import hive_to_hive.export_create_table_sql.config
+import hive_to_hive.export_create_table_sql.pubUtil
 import threading
 from Queue import Queue
 
@@ -173,7 +173,7 @@ def multi_thread(multi_list):
 
 # 导出结果到文件
 def export_to_file(result_queque):
-    f = open('./result.txt', 'a+')
+    f = open('../result.txt', 'a+')
     for i in range(result_queque.qsize()):
         table_name = result_queque.get()
         f.write(table_name)
@@ -184,9 +184,9 @@ def export_to_file(result_queque):
 # 运行之前清理结果表分区，添加重跑功能
 def clear_ocdp_partition():
     # 清理ocdp集群分区
-    sql = "alter table chk_result drop if exists partition(static_date=" + pubUtil.get_today() + ");"
+    sql = "alter table chk_result drop if exists partition(static_date=" + hive_to_hive.export_create_table_sql.pubUtil.get_today() + ");"
 
-    clear_sql_sh = config.excute_ocdp_sh + sql + '\''
+    clear_sql_sh = hive_to_hive.export_create_table_sql.config.excute_ocdp_sh + sql + '\''
 
     print clear_sql_sh
 
