@@ -364,7 +364,7 @@ def read_table_name():
     for line in f.readlines():
         line = line.strip('\n').replace('\t', '')
         #
-        # print 1, ' ######################### '
+        # print 1, ' #######################'
         # print line
         multi_list.append(line)
 
