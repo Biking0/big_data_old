@@ -358,7 +358,6 @@ def distcp_sy_to_ocdp():
 # 读取表名
 def read_table_name():
     f = open('/home/hive/hyn/data_check/test_table_name.txt', 'r')
-    i = 1
 
     multi_list = []
 

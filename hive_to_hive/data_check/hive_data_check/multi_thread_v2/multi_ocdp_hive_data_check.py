@@ -342,7 +342,6 @@ def diff_data():
 # 读取表名
 def read_table_name():
     f = open('/home/ocdp/hyn/data_check/hive_data_check/test_table_name.txt', 'r')
-    i = 1
 
     multi_list = []
 
