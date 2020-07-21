@@ -60,6 +60,21 @@ def clear_tb_file():
     os.popen(clear_sh)
 
 
+# 将数据插入mysql表处理并发问题
+def insert_mysql(sql):
+    # select_sql_sh = excute_desc_sh + ' ' + '\"use csap; ' + sql + ';\"'
+    # print '#select_sql_sh', select_sql_sh
+    #
+    # # select_result = os.popen(select_sql_sh).readlines()
+    # # print 'select_result', select_result
+    #
+    # insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into test_thread (id,name) values('1','123');\""
+    #
+    # print 'insert_sql', insert_sql
+    # # os.popen(insert_sql)
+    pass
+
+
 get_pre_day()
 get_pre_month()
 get_today()
