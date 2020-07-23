@@ -370,7 +370,7 @@ def read_table_name():
     multi_list = []
 
     for line in f.readlines():
-        line = line.strip('\n').replace('\t','')
+        line = line.strip('\n').replace('\t','').replace(' ','')
 
         print 1, ' #########################'
         print line
@@ -393,7 +393,7 @@ def read_list(num, data_queque, result_queque):
                 # 出队列
                 table_name = data_queque.get()
 
-                print 'table_name', table_name
+                # print 'table_name', table_name
                 create_desc(table_name)
 
         except Exception as e:
@@ -406,7 +406,7 @@ def read_list(num, data_queque, result_queque):
 
 # 多线程
 def multi_thread(multi_list):
-    print 'multi_list', multi_list
+    # print 'multi_list', multi_list
 
     data_queque = Queue()
     result_queque = Queue()
@@ -416,7 +416,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 29
+    a = 13
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程

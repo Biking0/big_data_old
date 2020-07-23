@@ -143,8 +143,6 @@ def desc_parser(table_name):
 
 # 分区检测，构造分区，根据需要稽核的时间段，循环生成相应的分区，判断是否为分区表,line(table_name)
 def check_partition(line, result_list, end_string):
-
-
     desc_list = open('/home/ocdp/hyn/data_check/hive_data_check/' + line + '.txt', 'r').readlines()
 
     # result_list = []
@@ -349,7 +347,7 @@ def read_table_name():
     multi_list = []
 
     for line in f.readlines():
-        line = line.strip('\n').replace(' ', '').replace('\t','')
+        line = line.strip('\n').replace(' ', '').replace('\t', '')
 
         print 1, ' #########################'
         print line
@@ -372,7 +370,7 @@ def read_list(num, data_queque, result_queque):
                 # 出队列
                 table_name = data_queque.get()
 
-                print 'table_name', table_name
+                # print 'table_name', table_name
                 create_desc(table_name)
 
         except Exception as e:
@@ -385,7 +383,7 @@ def read_list(num, data_queque, result_queque):
 
 # 多线程
 def multi_thread(multi_list):
-    print 'multi_list', multi_list
+    # print 'multi_list', multi_list
 
     data_queque = Queue()
     result_queque = Queue()

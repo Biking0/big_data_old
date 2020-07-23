@@ -30,7 +30,8 @@ from Queue import Queue
 # excute_desc_sh = "hive -e "
 
 # 测试环境
-excute_desc_sh = "hive -e "
+# excute_desc_sh = "hive -e "
+excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
 
 
 # 生成desc表结构文件
@@ -41,7 +42,7 @@ def create_desc(table_name):
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
-    print desc_sh
+    # print desc_sh
     os.popen(desc_sh).readlines()
     desc_parser(table_name)
 
@@ -64,7 +65,7 @@ def desc_parser(table_name):
             continue
 
         if 'Partition' not in line_list[1]:
-            print line_list[1], line_list[2], line_list[3],
+            # print line_list[1], line_list[2], line_list[3],
 
             # 封装表结构int字段
             if line_list[2] == 'int':
@@ -77,7 +78,7 @@ def desc_parser(table_name):
             check_partition_list = desc_list[i].split(' ')
 
             if check_partition_list[2] == 'Partition':
-                print '### 分区键'
+                # print '### 分区键'
 
                 for j in range(i + 1, len(desc_list)):
 
@@ -87,12 +88,12 @@ def desc_parser(table_name):
 
                     if desc_list[j][3] == ' ':
                         continue
-                    print desc_list[j].split(' ')[1]
+                    # print desc_list[j].split(' ')[1]
 
                 # 重要
                 break
 
-            print desc_list[i]
+            # print desc_list[i]
             continue
         #
 
@@ -102,8 +103,8 @@ def desc_parser(table_name):
     end_string = ''
     # 列表逆序
     desc_list.reverse()
-    print '##################'
-    print desc_list
+    # print '##################'
+    # print desc_list
     for i in range(len(desc_list)):
 
         # 忽略其他行
@@ -120,9 +121,9 @@ def desc_parser(table_name):
             continue
 
         if 'Partition' not in line_list[1]:
-            print line_list[1], line_list[2], line_list[3]
+            # print line_list[1], line_list[2], line_list[3]
 
-            print '########varchar', line_list[2][0:7]
+            # print '########varchar', line_list[2][0:7]
             # 逆序后找到第一个string类型字段
             if line_list[2] == 'string' or line_list[2][0:7] == 'varchar':
                 end_string = line_list[1]
@@ -132,8 +133,8 @@ def desc_parser(table_name):
                 # result_list.append(line_list[1])
 
     # 封装表结构int字段
-    print 'int colume:'
-    print result_list
+    # print 'int colume:'
+    # print result_list
 
     # 分区检测
     check_partition(table_name, result_list, end_string)
@@ -157,9 +158,9 @@ def check_partition(line, result_list, end_string):
         if line_list[1] == 'col_name' or 'NULL' in line_list[1]:
             continue
 
-        if 'Partition' not in line_list[1]:
-            print line_list[1], line_list[2], line_list[3],
-            print '#'
+        # if 'Partition' not in line_list[1]:
+        #     # print line_list[1], line_list[2], line_list[3],
+        #     print '#'
 
         # 检测分区数量
         if desc_list[i][2] == '#':
@@ -199,7 +200,7 @@ def check_partition(line, result_list, end_string):
             break
 
     # 分区处理
-    print '# partition_list', partition_list
+    # print '# partition_list', partition_list
 
     partition = ''
 
@@ -273,7 +274,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
     for i in range(len(table_int_list)):
         table_int_str = table_int_str + "nvl(sum(%s),''),'_'," % (table_int_list[i])
 
-    print 'table_int_str', table_int_str
+    # print 'table_int_str', table_int_str
 
     sql_part2 = ",concat(%s)" % (table_int_str[0:-5])
 
@@ -286,7 +287,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
     print select_sql_sh
     # os.popen(select_sql_sh).readlines()
 
-    insert_table(table_name, sql)
+    insert_table(table_name, sql,select_sql_sh)
 
     # 删除表结构文本文件
     delete_sh = 'rm ' + table_name + '.txt'
@@ -294,9 +295,10 @@ def create_sql(table_name, table_int_list, partition, end_string):
 
 
 # 构造出sql，将查询结果插入稽核结果表中
-def insert_table(table_name, sql):
+def insert_table(table_name, sql,select_sql_sh):
+    # chk_table_name = 'chk_result'
     chk_table_name = 'chk_result'
-    insert_sql = " use csap; insert into table " + chk_table_name + " partition (static_date=" + time.strftime(
+    insert_sql = " use csap;insert into table " + chk_table_name + " partition (static_date=" + time.strftime(
         "%Y%m%d",
         time.localtime(
             time.time())) + ") " + sql
@@ -312,6 +314,25 @@ def insert_table(table_name, sql):
 
     # 苏研数据迁移到ocdp集群
     # distcp_sy_to_ocdp()
+    insert_mysql(insert_sql,select_sql_sh)
+
+
+# 将数据插入mysql表处理并发问题
+def insert_mysql(sql,select_sql_sh):
+
+    # select_sql_sh = excute_desc_sh + ' ' + '\"use csap; ' + sql + ';\"'
+    print '#select_sql_sh', select_sql_sh
+
+    select_result = os.popen(select_sql_sh).readlines()
+    print 'select_result', select_result
+
+    f=open('./insert_mysql.txt','w')
+    f.write(select_result)
+
+    insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into test_thread (id,name) values('1','123');\""
+
+    print 'insert_sql', insert_sql
+    # os.popen(insert_sql)
 
 
 # 获取表结构
@@ -377,7 +398,7 @@ def read_table_name():
     multi_thread(multi_list)
 
     # 清理tb*文件
-    pubUtil.clear_tb_file()
+    # pubUtil.clear_tb_file()
 
 
 # 遍历列表
@@ -388,7 +409,7 @@ def read_list(num, data_queque, result_queque):
                 # 出队列
                 table_name = data_queque.get()
 
-                print 'table_name', table_name
+                # print 'table_name', table_name
                 create_desc(table_name)
 
         except Exception as e:
@@ -401,7 +422,7 @@ def read_list(num, data_queque, result_queque):
 
 # 多线程
 def multi_thread(multi_list):
-    print 'multi_list', multi_list
+    # print 'multi_list', multi_list
 
     data_queque = Queue()
     result_queque = Queue()
@@ -411,7 +432,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 10
+    a = 1
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程
@@ -427,7 +448,7 @@ def clear_sy_partition():
 
     clear_sql_sh = config.excute_sy_sh + sql + '\''
 
-    print clear_sql_sh
+    # print clear_sql_sh
 
     # 执行清理，多线程运行不能清理分区
     # os.popen(clear_sql_sh)

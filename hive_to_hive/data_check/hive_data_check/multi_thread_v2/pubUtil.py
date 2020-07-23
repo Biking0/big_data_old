@@ -59,7 +59,6 @@ def clear_tb_file():
     clear_sh = 'rm ./tb*.txt'
     os.popen(clear_sh)
 
-
 # 将数据插入mysql表处理并发问题
 def insert_mysql(sql):
     # select_sql_sh = excute_desc_sh + ' ' + '\"use csap; ' + sql + ';\"'

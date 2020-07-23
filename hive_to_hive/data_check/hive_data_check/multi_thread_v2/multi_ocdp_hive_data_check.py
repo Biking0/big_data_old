@@ -275,7 +275,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
     for i in range(len(table_int_list)):
         table_int_str = table_int_str + "nvl(sum(%s),''),'_'," % (table_int_list[i])
 
-    print 'table_int_str', table_int_str
+    # print 'table_int_str', table_int_str
 
     sql_part2 = ",concat(%s)" % (table_int_str[0:-5])
 
@@ -309,6 +309,22 @@ def insert_table(table_name, sql):
     os.popen(insert_sql_sh).readlines()
 
     # export_chk_result(table_name)
+
+    insert_mysql(insert_sql)
+
+
+# 将数据插入mysql表处理并发问题
+def insert_mysql(sql):
+    select_sql_sh = excute_desc_sh + ' ' + '\"use csap; ' + sql + ';\"'
+    print '#select_sql_sh', select_sql_sh
+
+    # select_result = os.popen(select_sql_sh).readlines()
+    # print 'select_result', select_result
+
+    insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into test_thread (id,name) values('1','123');\""
+
+    print 'insert_sql', insert_sql
+    # os.popen(insert_sql)
 
 
 # 获取表结构
@@ -361,7 +377,7 @@ def read_table_name():
     multi_thread(multi_list)
 
     # 清理tb*文件
-    pubUtil.clear_tb_file()
+    # pubUtil.clear_tb_file()
 
 
 # 遍历列表
@@ -395,7 +411,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 150
+    a = 10
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程
