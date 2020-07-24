@@ -287,7 +287,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
     print select_sql_sh
     # os.popen(select_sql_sh).readlines()
 
-    insert_table(table_name, sql,select_sql_sh)
+    insert_table(table_name, sql, select_sql_sh)
 
     # 删除表结构文本文件
     delete_sh = 'rm ' + table_name + '.txt'
@@ -295,7 +295,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
 
 
 # 构造出sql，将查询结果插入稽核结果表中
-def insert_table(table_name, sql,select_sql_sh):
+def insert_table(table_name, sql, select_sql_sh):
     # chk_table_name = 'chk_result'
     chk_table_name = 'chk_result'
     insert_sql = " use csap;insert into table " + chk_table_name + " partition (static_date=" + time.strftime(
@@ -307,37 +307,39 @@ def insert_table(table_name, sql,select_sql_sh):
     # 执行插入语句
     insert_sql_sh = excute_desc_sh + ' \" ' + insert_sql + ' \" '
     print insert_sql_sh
-    os.popen(insert_sql_sh).readlines()
+    # os.popen(insert_sql_sh).readlines()
 
     # 导出数据到文件
     # export_chk_result(table_name)
 
     # 苏研数据迁移到ocdp集群
     # distcp_sy_to_ocdp()
-    insert_mysql(insert_sql,select_sql_sh)
+    insert_mysql(table_name, insert_sql, select_sql_sh)
 
 
 # 将数据插入mysql表处理并发问题
-def insert_mysql(sql,select_sql_sh):
-
+def insert_mysql(table_name, sql, select_sql_sh):
     # select_sql_sh = excute_desc_sh + ' ' + '\"use csap; ' + sql + ';\"'
     print '#select_sql_sh', select_sql_sh
 
     select_result = os.popen(select_sql_sh).readlines()
     print 'select_result', select_result
 
-    f=open('./insert_mysql.txt','w')
-    f.write(select_result)
+    result_str = str(select_result[3].replace(' ', '').replace('\t', '').replace('\n', ''))
+    result_list = result_str.split('|')
 
-    insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into test_thread (id,name) values('1','123');\""
+    print 'result_str', result_str
+    print 'result_list', result_list
+    # f = open("./"++".txt", 'w')
+    # f.write(str(select_result[3].replace(' ', '').replace('\t', '').replace('\n', '')))
+
+    # insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into test_thread (id,name) values('1','123');\""
+    insert_sql = "mysql -ucsapdmcfg -h192.168.195.233 -P20031 -s -r -p -A -N -piEXIMt3w\!TFL9vkO csapdmcfg -e \"insert into tb_chk_result_test2(data_source ,des_tbl ,cyclical,count1,end_string_sum,sum1,remark,chk_dt,static_date) values('%s','%s','%s','%s','%s','%s','%s','%s','');\"" % (
+        result_list[1], result_list[2], result_list[3], result_list[4], result_list[5], result_list[6], result_list[7],
+        result_list[8])
 
     print 'insert_sql', insert_sql
-    # os.popen(insert_sql)
-
-
-# 获取表结构
-def get_table_struct(table_name):
-    pass
+    os.popen(insert_sql)
 
 
 # 导出稽核结果表到文件
