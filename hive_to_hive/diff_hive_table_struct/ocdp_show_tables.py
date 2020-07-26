@@ -29,5 +29,23 @@ def show_tables():
     show_tables_sh = excute_ocdp_sh + '\"' + show_tables_sql + '\"'
 
     print show_tables_sh
+    show_tables_list = os.popen(show_tables_sh).readlines()
+    # print show_tables_list
+
+    result_list = []
+    for i in range(len(show_tables_list)):
+
+        show_tables_list[i] = show_tables_list[i].replace('\n', '').replace(' ', '').replace('|', '')
+        if ('+' in show_tables_list[i]) or ('tab_name' in show_tables_list[i]):
+            continue
+        result_list.append(show_tables_list[i])
+
+    # result_list=result_list.sorted()
+
+    result_list= sorted(result_list)
+    ocdp_table_name=open('./ocdp_table_name.txt','w')
+    for i in range(len(result_list)):
+        ocdp_table_name.write(result_list[i]+'\n')
+
 
 show_tables()

@@ -25,7 +25,7 @@ create table chk_result (
 partitioned by (static_date string)
 row format delimited fileds terminated by ' ';
 
-create table chk_result_test (
+create table chk_result_test12333 (
  data_source    string          comment '数据源'
 ,des_tbl        string          comment '目标表名'
 ,cyclical       string          comment '周期'
@@ -34,7 +34,7 @@ create table chk_result_test (
 ,remark         string          comment '备注'
 ,chk_dt         string             comment '检核时间'
 )
-partitioned by (static_date string)
+partitioned by (statis_date string)
 
 # 字段注释
  DATA_SOURCE    STRING          COMMENT '数据源'
