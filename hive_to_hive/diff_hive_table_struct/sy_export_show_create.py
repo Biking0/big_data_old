@@ -66,7 +66,9 @@ def get_table_struct(table_name):
         '\'\'', '\'|\'').replace('\n', '').replace('`', '')
 
     # 去除LOCATION
-    local_localtion = data.find('LOCATION')
+    # local_localtion = data.find('LOCATION')
+    # 表结构稽核
+    local_localtion = data.find('ROW')
 
     # print local_localtion
     result = data[0:local_localtion]

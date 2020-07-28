@@ -42,10 +42,10 @@ def show_tables():
 
     # result_list=result_list.sorted()
 
-    result_list= sorted(result_list)
-    ocdp_table_name=open('./sy_table_name.txt','w')
+    result_list = sorted(result_list)
+    ocdp_table_name = open('./sy_table_name.txt', 'w')
     for i in range(len(result_list)):
-        ocdp_table_name.write(result_list[i]+'\n')
+        ocdp_table_name.write(result_list[i] + '\n')
 
 
 show_tables()
