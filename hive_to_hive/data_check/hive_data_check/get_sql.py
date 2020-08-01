@@ -28,7 +28,7 @@ excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
     # print desc_sh
     os.popen(desc_sh).readlines()
@@ -37,6 +37,7 @@ def create_desc(table_name):
 
 # 解析desc表结构
 def desc_parser(table_name):
+    # desc_list = open('/home/ocdp/get_sql/' + table_name + '.txt', 'r').readlines()
     desc_list = open('./' + table_name + '.txt', 'r').readlines()
 
     result_list = []
@@ -269,13 +270,15 @@ def create_sql(table_name, table_int_list, partition, end_string):
 
     sql = sql_part1 + sql_part2 + sql_part3
 
+    print '\n'
     print 'sql select :', sql
 
     # 执行查询
     select_sql_sh = excute_desc_sh + ' \" ' + sql
-    print select_sql_sh
+    # print '\n'
+    # print select_sql_sh
     # os.popen(select_sql_sh).readlines()
-
+    print '\n'
     # 删除表结构文本文件
     delete_sh = 'rm ./' + table_name + '.txt'
     os.popen(delete_sh).readlines()
