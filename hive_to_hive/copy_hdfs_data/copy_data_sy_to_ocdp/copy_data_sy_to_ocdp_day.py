@@ -53,6 +53,7 @@ day_format = '%Y%m%d'
 
 # 连接mysql
 mysql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e ' "
+excute_hive_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e '"
 
 file_path = '/home/ocdp/hyn/copy_hdfs_data/'
 
@@ -62,6 +63,8 @@ file_path = '/home/ocdp/hyn/copy_hdfs_data/'
 copy_status_0 = '0'
 # 正在同步
 copy_status_1 = '1'
+# 同步完成
+copy_status_2 = '2'
 
 # 稽核状态
 
@@ -73,7 +76,10 @@ data_source = 'sy'
 # 获取任务，mysql获取表名，每次获取一个列表进行遍历
 def read_table_name():
     # 获取可以稽核表名列表
-    get_task_sql = "select a.table_name from tb_copy_get_task a left join tb_copy_data_log b on a.table_name=b.table_name where b.copy_status='0' or b.table_name is null ;"
+    # get_task_sql = "select a.table_name from tb_copy_get_task a left join tb_copy_data_log b on a.table_name=b.table_name where  b.table_name is null ;"
+    get_task_sql = "select table_name  from tb_copy_get_task;"
+
+    now_partition=
 
     print get_task_sql
 
@@ -91,23 +97,7 @@ def read_table_name():
         # 调用迁移
         input_date(table_name)
 
-    # 执行获取sql
-    # os.popen(get_task_sql_sh)
-
-    # get_task_list = open(get_task_file, 'r')
-
-    multi_list = []
-
-    # for table_name in get_task_list.readlines():
-    #     table_name = table_name.strip('\n').replace('\t', '').replace(' ', '')
-    #
-    #     print 1, ' #########################'
-    #     print table_name
-    #
-    #     multi_list.append(table_name)
-    #
-    #     # 调用迁移
-    #     input_date(table_name)
+    print '无迁移任务'
 
 
 # 处理日期输入数据，数据迁移日期
@@ -127,7 +117,8 @@ def input_date(table_name):
 
     # 遍历迁移周期
     for i in range(date_length):
-        partition_date = str((partition_date_init + date_time.timedelta(days=i + 1)).date()).replace('-', '')
+        print i
+        partition_date = str((partition_date_init + date_time.timedelta(days=i)).date()).replace('-', '')
         print partition_date
 
         # 检测该周期是否已迁移完成
@@ -142,7 +133,7 @@ def input_date(table_name):
         add_partition(table_name, partition_date)
 
         # 单条测试，正式上线后删掉
-        break
+        # break
 
 
 # 检测该周期是否已迁移完成
@@ -202,24 +193,65 @@ def add_partition(table_name, partition_date):
     # 生成周期
     # for i in ()
 
+    # 重建分区
+    delete_partition_sql = "alter table " + table_name + " drop if  exists partition (" + partition_statis_date + "=" + partition_date + ");"
+    delete_partition_sql_sh = excute_hive_sh + delete_partition_sql + "\'"
+
     # 先测试单周期
-    add_partition_sql = "alter table " + table_name + " add partition (" + partition_statis_date + "=" + partition_date + ")"
+    add_partition_sql = "alter table " + table_name + " add if not exists partition (" + partition_statis_date + "=" + partition_date + ");"
 
     print add_partition_sql
 
+    add_partition_sql_sh = excute_hive_sh + add_partition_sql + "\'"
+
+    print '分区已添加：', delete_partition_sql_sh, add_partition_sql_sh
+    os.popen(delete_partition_sql_sh)
+    os.popen(add_partition_sql_sh)
+
+    copy_data(table_name, partition_date)
+
 
 # 构造迁移语句
-def create_sql(table_name, date):
+def copy_data(table_name, partition_date):
     # hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day/statis_date=20170617 hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/tb_si_cu_voma_limit_whitelist_day
-
-    distcp_sh = "hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/" + partition_statis_date + "=" + date + " hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/" + table_name + "/"
+    st_time = date_time.datetime.now()
+    print "[info]" + str(st_time), ":表数据迁移开始:", table_name, "分区:", partition_date
+    distcp_sh = "hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/" + partition_statis_date + "=" + partition_date + " hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
 
     print distcp_sh
 
+    os.popen(distcp_sh)
+    end_time = date_time.datetime.now()
+    print "[info]" + str(end_time), ":表数据迁移结束:", table_name, "分区:", partition_date
+    print '共耗时:', end_time - st_time, 'S'
+    add_info(table_name, partition_date)
+    copy_ok(table_name, partition_date)
 
-# 执行迁移语句
-def exec_sql():
-    pass
+
+# 数据迁移完成更新数据库记录
+def copy_ok(table_name, partition_date):
+    update_status_sql = "update tb_copy_data_log set copy_status ='" + copy_status_2 + "' where table_name='" + table_name + "' and partition_time='" + partition_date + "\'"
+
+    print '更新sql:', update_status_sql
+
+    conn_db.insert(update_status_sql)
+
+    print '数据迁移同步,更新同步状态完成:', table_name, partition_date
+    if str(date_time.datetime.now())[11:13] == '06':
+        print '到达早上6点,自动停止迁移任务,当前时间:', str(date_time.datetime.now())[0:19]
+        exit(0)
+
+
+def add_info(table_name, partition_date):
+    add_info_sql = "ANALYZE TABLE " + table_name + " partition(" + partition_statis_date + "= " + partition_date + " ) COMPUTE STATISTICS;"
+
+    add_info_sql_sh = excute_hive_sh + add_info_sql + "\'"
+
+    print '收集元数据库统计信息:', add_info_sql_sh
+
+    os.popen(add_info_sql_sh)
+
+    print '[info] ', str(date_time.datetime.now())[0:19], ':收集元数据库统计信息完成：', table_name, '分区：', partition_date
 
 
 read_table_name()
