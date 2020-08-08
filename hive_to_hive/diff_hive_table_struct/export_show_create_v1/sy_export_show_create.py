@@ -53,19 +53,6 @@ def get_table_struct(table_name):
 
     # print '###########'
 
-    # 过滤建表语句
-    # data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
-    #                                                                                                      '').replace(
-    #     '\'\'', '\'|\'').replace('\n', '').replace('`', '').replace(' _c0 ', ' `_c0` ').replace(' _c1 ', ' `_c1` ').replace(' _c2 ',
-    #                                                                                             ' `_c2` ').replace(
-    #     ' _c3 ', ' `_c3` ').replace(' _c4 ', ' `_c4` ').replace(' _c5  ', ' `_c5 ` ').replace(' _c6  ',
-    #                                                                                           ' `_c6 ` ').replace(
-    #     ' _c7  ', ' `_c7 ` ').replace(' _c8  ', ' `_c8 ` ').replace(' _c9 ', ' `_c9 ` ').replace(' _c10 ',
-    #                                                                                              ' `_c10` ').replace(
-    #     ' _c11 ', ' `_c11` ').replace(' _c12 ', ' `_c12` ').replace(' _c13 ', ' `_c13`').replace(' _c14 ',
-    #                                                                                              ' `_c14` ').replace(
-    #     ' _c15 ', ' `_c15` ')
-
     data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
                                                                                                          '').replace(
         '\'\'', '\'|\'').replace('\n', '').replace('`', '')
@@ -94,7 +81,7 @@ def get_table_struct(table_name):
 
 def insert_mysql(table_name, result):
     today = str(datetime.date.today()).replace('-', '')
-    insert_sql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e 'insert into check_table_struct (cluster,table_name,create_table_sql,check_time) values(\"" + cluster + "\",\""+table_name+"\",\"" + result + "\",\"" + today + "\")'"
+    insert_sql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e 'insert into check_table_struct (cluster,table_name,create_table_sql,check_time) values(\"" + cluster + "\",\"" + table_name + "\",\"" + result + "\",\"" + today + "\")'"
     print 'insert_sql_sh', insert_sql_sh
     insert_str = os.popen(insert_sql_sh).readlines()
     print 'insert_str', insert_str
@@ -153,7 +140,6 @@ def read_list(num, data_queque, result_queque):
             break
 
 
-
 # 多线程
 def multi_thread(multi_list):
     # print 'multi_list', multi_list
@@ -166,7 +152,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 2
+    a = 10
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程

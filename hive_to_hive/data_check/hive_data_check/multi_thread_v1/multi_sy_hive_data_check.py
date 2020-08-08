@@ -41,7 +41,7 @@ def create_desc(table_name):
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
 
-    # print desc_sh
+    print desc_sh
     os.popen(desc_sh).readlines()
     desc_parser(table_name)
 
@@ -64,7 +64,7 @@ def desc_parser(table_name):
             continue
 
         if 'Partition' not in line_list[1]:
-            # print line_list[1], line_list[2], line_list[3],
+            print line_list[1], line_list[2], line_list[3],
 
             # 封装表结构int字段
             if line_list[2] == 'int':
@@ -87,12 +87,12 @@ def desc_parser(table_name):
 
                     if desc_list[j][3] == ' ':
                         continue
-                    # print desc_list[j].split(' ')[1]
+                    print desc_list[j].split(' ')[1]
 
                 # 重要
                 break
 
-            # print desc_list[i]
+            print desc_list[i]
             continue
         #
 
@@ -102,8 +102,8 @@ def desc_parser(table_name):
     end_string = ''
     # 列表逆序
     desc_list.reverse()
-    # print '##################'
-    # print desc_list
+    print '##################'
+    print desc_list
     for i in range(len(desc_list)):
 
         # 忽略其他行
@@ -120,9 +120,9 @@ def desc_parser(table_name):
             continue
 
         if 'Partition' not in line_list[1]:
-            # print line_list[1], line_list[2], line_list[3]
+            print line_list[1], line_list[2], line_list[3]
 
-            # print '########varchar', line_list[2][0:7]
+            print '########varchar', line_list[2][0:7]
             # 逆序后找到第一个string类型字段
             if line_list[2] == 'string' or line_list[2][0:7] == 'varchar':
                 end_string = line_list[1]
@@ -132,8 +132,8 @@ def desc_parser(table_name):
                 # result_list.append(line_list[1])
 
     # 封装表结构int字段
-    # print 'int colume:'
-    # print result_list
+    print 'int colume:'
+    print result_list
 
     # 分区检测
     check_partition(table_name, result_list, end_string)
@@ -160,16 +160,15 @@ def check_partition(line, result_list, end_string):
             continue
 
         if 'Partition' not in line_list[1]:
-            # print line_list[1], line_list[2], line_list[3],
-            # print '#'
-            pass
+            print line_list[1], line_list[2], line_list[3],
+            print '#'
 
         # 检测分区数量
         if desc_list[i][2] == '#':
             check_partition_list = desc_list[i].split(' ')
 
             if check_partition_list[2] == 'Partition':
-                # print '### 分区键'
+                print '### 分区键'
 
                 # partition_list = []
                 for j in range(i + 1, len(desc_list)):
@@ -181,7 +180,7 @@ def check_partition(line, result_list, end_string):
                     if desc_list[j][3] == ' ':
                         continue
                     partition_key = desc_list[j].split(' ')[1]
-                    # print partition_key
+                    print partition_key
                     partition_list.append(partition_key)
 
                 if len(partition_list) > 1:
@@ -202,7 +201,7 @@ def check_partition(line, result_list, end_string):
             break
 
     # 分区处理
-    # print '# partition_list', partition_list
+    print '# partition_list', partition_list
 
     partition = ''
 
@@ -276,7 +275,7 @@ def create_sql(table_name, table_int_list, partition, end_string):
     for i in range(len(table_int_list)):
         table_int_str = table_int_str + "nvl(sum(%s),''),'_'," % (table_int_list[i])
 
-    # print 'table_int_str', table_int_str
+    print 'table_int_str', table_int_str
 
     sql_part2 = ",concat(%s)" % (table_int_str[0:-5])
 
@@ -417,7 +416,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 18
+    a = 16
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程

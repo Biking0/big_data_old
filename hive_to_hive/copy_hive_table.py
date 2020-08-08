@@ -60,7 +60,7 @@ def get_table_struct(table_name):
 
     data = data.replace('+', '').replace('-', '').replace('+', '').replace('createtab_stmt', '').replace('|',
                                                                                                          '').replace(
-        '\'\'', '\'|\'').replace('\n', '').replace('`', '')
+        '\'\'', '\'|\'').replace('\n', '')
 
     # 去除LOCATION
     local_localtion = data.find('LOCATION')
