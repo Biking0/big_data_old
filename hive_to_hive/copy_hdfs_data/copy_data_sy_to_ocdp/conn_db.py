@@ -19,9 +19,48 @@ from datetime import datetime
 import datetime as date_time
 import pymysql
 
+mysql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e ' "
 
 
-
+# 连接
 def conn_db():
-    conn = pymysql.connect(host="127.0.0.1", port=22066, user="root", passwd="123456", db="dsideal_db", charset="utf8")
+    conn = pymysql.connect(host="172.19.168.22", port=3308, user="zhao", passwd="zhao", db="zhao", charset="utf8")
+
+
+    return conn
+
+
+def select(sql):
+    conn = conn_db()
+    cursor=conn.cursor()
+
+    cursor.execute(sql)
+
+    result = cursor.fetchall()
+    cursor.close()
+    print type(result)
+
+    # print result
+    return result
+
+
+def insert(sql):
+    conn = conn_db()
     cursor = conn.cursor()
+
+    cursor.execute(sql)
+
+    result = cursor.fetchall()
+
+    conn.commit()
+    cursor.close()
+    conn.close()
+
+    print type(result)
+
+    # print result
+    return result
+
+# select("show tables;")
+
+insert("insert into test (id) values ('123')")
