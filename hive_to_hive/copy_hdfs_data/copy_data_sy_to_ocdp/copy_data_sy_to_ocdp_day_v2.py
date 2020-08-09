@@ -24,7 +24,6 @@ import conn_db
 import pymysql
 
 # 对分区表、非分区表分类
-
 # 功能结构
 # 读取表名
 # 处理日期输入数据
@@ -55,7 +54,7 @@ day_format = '%Y%m%d'
 mysql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e ' "
 excute_hive_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e '"
 
-file_path = '/home/ocdp/hyn/copy_hdfs_data/'
+# file_path = '/home/ocdp/hyn/copy_hdfs_data/'
 
 # 同步状态
 
@@ -77,7 +76,7 @@ data_source = 'sy'
 def read_table_name():
     # 获取可以稽核表名列表
     # get_task_sql = "select a.table_name from tb_copy_get_task a left join tb_copy_data_log b on a.table_name=b.table_name where  b.table_name is null ;"
-    get_task_sql = "select table_name  from tb_copy_get_task where start_partition is not null and end_partition is not null and ifnull(now_partition ,start_partition) <= end_partition;"
+    get_task_sql = "select table_name  from tb_copy_get_task where start_partition is not null and end_partition is not null and ifnull(now_partition ,start_partition) < end_partition;"
 
     print get_task_sql
 
@@ -98,10 +97,11 @@ def read_table_name():
     print '无迁移任务'
 
 
-# 处理日期输入数据，数据迁移日期
+# 处理日期输入数据，数据迁移日期，从数据库获取开始日期和结束日期
 def input_date(table_name):
-    get_date_sql = "select ifnull(now_partition,start_partition) as start_prt,end_partition from tb_copy_get_task where table_name='" + table_name + "\'"
+    get_date_sql = "select ifnull(now_partition,start_partition) as start_partition,end_partition from tb_copy_get_task where table_name='" + table_name + "\'"
 
+    print '获取开始日期:', get_date_sql
     select_result = conn_db.select(get_date_sql)
 
     start_date = select_result[0][0]
@@ -112,7 +112,7 @@ def input_date(table_name):
     end_date_time = datetime.strptime(end_date, day_format)
 
     # 迁移周期跨度
-    date_length = (end_date_time - start_date_time).days
+    date_length = (end_date_time - start_date_time).days + 1
 
     print '迁移周期：', date_length
 
@@ -230,12 +230,14 @@ def copy_data(table_name, partition_date):
     print "[info]" + str(end_time), ":表数据迁移结束:", table_name, "分区:", partition_date
     print '共耗时:', end_time - st_time, 'S'
     add_info(table_name, partition_date)
-    copy_ok(table_name, partition_date)
+    copy_ok(table_name, partition_date, st_time, end_time)
 
 
 # 数据迁移完成更新数据库记录
-def copy_ok(table_name, partition_date):
-    update_status_sql = "update tb_copy_data_log set copy_status ='" + copy_status_2 + "' where table_name='" + table_name + "' and partition_time='" + partition_date + "\'"
+def copy_ok(table_name, partition_date, st_time, end_time):
+    update_status_sql = "update tb_copy_data_log set copy_status ='" + copy_status_2 + "',start_time='" + str(st_time)[
+                                                                                                          0:19] + "',end_time='" + str(
+        end_time)[0:19] + "' where table_name='" + table_name + "' and partition_time='" + partition_date + "\'"
 
     print '更新sql:', update_status_sql
 
