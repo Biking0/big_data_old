@@ -42,5 +42,6 @@ chk_status_0 = ''
 data_source = 'sy'
 
 # 带宽限制参数
-bandwidth = '80'
-map_num = '80'
+bandwidth = '30'
+map_num = '50'
+
