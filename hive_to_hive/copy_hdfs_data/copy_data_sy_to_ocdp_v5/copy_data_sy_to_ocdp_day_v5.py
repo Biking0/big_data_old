@@ -66,54 +66,80 @@ class CopyData():
             print '表名：', table_name
 
             # 调用迁移
-            # self.input_date(table_name)
+            self.input_date(table_name)
 
         print '无迁移任务'
 
     # 处理日期输入数据，数据迁移日期，从数据库获取开始日期和结束日期
     def input_date(self, table_name):
-        get_date_sql = "select ifnull(now_partition,start_partition) as start_partition,end_partition from tb_copy_get_task where table_name='" + table_name + "\'"
 
-        print '获取开始日期:', get_date_sql
-        select_result = conn_db.select(get_date_sql)
+        # 全量表
+        if self.input_batch == '1':
+            if self.check_date(table_name, partition_date=None):
 
-        start_date = select_result[0][0]
-        end_date = select_result[0][1]
+                try:
+                    self.add_partition(table_name, partition_date=None)
+                except Exception as e:
+                    print '全量表-出现异常：', table_name
 
-        start_date_time = datetime.strptime(start_date, config.day_format)
+                    # 更新mysql失败
 
-        end_date_time = datetime.strptime(end_date, config.day_format)
+            # 该表已迁移
+            else:
+                print '该表已迁移', table_name
+                return
 
-        # 迁移周期跨度
-        date_length = (end_date_time - start_date_time).days + 1
+        # 非全量表，todo
+        else:
 
-        print '迁移周期：', date_length
+            # 获取分区键，分区时间
+            get_date_sql = "select ifnull(now_partition,start_partition) as start_partition,end_partition from tb_copy_get_task where table_name='" + table_name + "\'"
 
-        partition_date_init = start_date_time
+            print '获取开始日期:', get_date_sql
+            select_result = conn_db.select(get_date_sql)
 
-        # 遍历迁移周期
-        for i in range(date_length):
-            print i
-            partition_date = str((partition_date_init + date_time.timedelta(days=i)).date()).replace('-', '')
-            print partition_date
+            start_date = select_result[0][0]
+            end_date = select_result[0][1]
 
-            # 检测该周期是否已迁移完成
-            if self.check_date(table_name, partition_date):
-                # 返回结果不为空
-                continue
+            start_date_time = datetime.strptime(start_date, config.day_format)
 
-            # 更新mysql同步状态
-            update_copy_status = "update tb_copy_data_log set copy_status = '1' , where  "
+            end_date_time = datetime.strptime(end_date, config.day_format)
 
-            # 添加分区
-            self.add_partition(table_name, partition_date)
+            # 迁移周期跨度
+            date_length = (end_date_time - start_date_time).days + 1
 
-            # 单条测试，正式上线后删掉
-            # break
+            print '迁移周期：', date_length
+
+            partition_date_init = start_date_time
+
+            # 遍历迁移周期
+            for i in range(date_length):
+
+                print i
+                partition_date = str((partition_date_init + date_time.timedelta(days=i)).date()).replace('-', '')
+
+                print partition_date
+
+                try:
+
+                    # 检测该周期是否已迁移完成
+                    if self.check_date(table_name, partition_date):
+                        # 返回结果不为空
+                        continue
+
+                    # 添加分区
+                    self.add_partition(table_name, partition_date)
+
+                    # 单条测试，正式上线后删掉
+                    # break
+                except Exception as e:
+                    print '全量表-出现异常：', table_name, partition_date
 
     # 检测该周期是否已迁移完成
     def check_date(self, table_name, partition_date):
-        # 检测该表是否存在
+        print '初始化检测，更新同步状态'
+
+        # 检测该表是否存在日志表里，初始化准备
         check_table_sql = "select table_name from tb_copy_data_log where table_name='" + table_name + "\'"
 
         print '检测该表是否存在:', check_table_sql
@@ -123,91 +149,128 @@ class CopyData():
         # 当前时间
         now_time = str(date_time.datetime.now())[0:19]
 
+        # 如果表不存在,返回true，初始化，状态改为正在迁移，执行迁移
         if not check_table_result:
-            # 初始化mysql同步状态
-            insert_table_sql = "insert into tb_copy_data_log (data_source,table_name,partition_type,partition_time,copy_status,chk_status,start_time,end_time) values('%s','%s','%s','%s','%s','%s','%s','%s')" % (
-                config.data_source, table_name, config.partition_statis_date, partition_date, config.copy_status_1,
-                config.chk_status_0, now_time, '0')
-            print '插入记录初始化：', insert_table_sql
 
-            conn_db.insert(insert_table_sql)
+            # 全量表，检测是否在日志表里，日志表里状态是否已同步完成
+            if self.input_batch == '1':
 
-            # 测试
-            conn_db.insert("insert into test (id) values ('123')")
-            print '完成初始化'
+                # 初始化mysql同步状态
+                insert_table_sql = "insert into tb_copy_data_log (data_source,table_name,partition_type,partition_time,copy_status,chk_status,start_time,end_time) values('%s','%s','%s','%s','%s','%s','%s','%s')" % (
+                    config.data_source, table_name, config.all_table, partition_date, config.copy_status_1,
+                    config.chk_status_0, now_time, '0')
+                print '插入记录初始化：', insert_table_sql
 
-        # 检测该分区是否存在
-        check_partition_sql = "select table_name from tb_copy_data_log where table_name='" + table_name + "' and partition_time='%s\'" % (
-            partition_date)
-        print check_partition_sql
-        check_partition_result = conn_db.select(check_partition_sql)
-        if not check_partition_result:
-            # 插入分区
-            insert_table_sql = "insert into tb_copy_data_log (data_source,table_name,partition_type,partition_time,copy_status,chk_status,start_time,end_time) values('%s','%s','%s','%s','%s','%s','%s','%s')" % (
-                config.data_source, table_name, config.partition_statis_date, partition_date, config.copy_status_1,
-                config.chk_status_0, now_time, '0')
-            print '插入记录初始化：', insert_table_sql
-            check_table_result = conn_db.insert(insert_table_sql)
+                conn_db.insert(insert_table_sql)
 
-        # 检测同步状态
-        check_status_sql = " select table_name from tb_copy_data_log where table_name='" + table_name + "' and partition_time= '" + partition_date + "' and copy_status = '" + config.copy_status_0 + "\'"
+                # 测试
+                conn_db.insert("insert into test (id) values ('123')")
+                print '完成初始化'
 
-        print check_status_sql
-        select_result = conn_db.select(check_status_sql)
-
-        print '检测结果：', select_result
-
-        # 结果判空
-        if select_result:
+            # 非全量表,todo
+            else:
+                pass
 
             return True
+
+        # 表存在日志表里，检测分区，判断是否已迁移
         else:
-            return False
+            # 全量表，检测是否在日志表里，日志表里状态是否已同步完成
+            if self.input_batch == '1':
 
-    # 添加分区
+                # 获取迁移状态
+                copy_status_sql = "select * from tb_copy_data_log where table_name='" + table_name + "';"
+
+                copy_status = conn_db.select(copy_status_sql)
+
+                # 已同步完成
+                if copy_status[0][0] == '2':
+                    return False
+
+                # 同步失败
+                else:
+                    return True
+
+            # 非全量表,todo
+            else:
+
+                # 检测分区是否已存在
+                if not check_table_result:
+                    # 初始化mysql同步状态
+                    insert_table_sql = "insert into tb_copy_data_log (data_source,table_name,partition_type,partition_time,copy_status,chk_status,start_time,end_time) values('%s','%s','%s','%s','%s','%s','%s','%s')" % (
+                        config.data_source, table_name, config.partition_statis_date, partition_date,
+                        config.copy_status_1,
+                        config.chk_status_0, now_time, '0')
+                    print '插入记录初始化：', insert_table_sql
+
+                    conn_db.insert(insert_table_sql)
+
+                    # 测试
+                    conn_db.insert("insert into test (id) values ('123')")
+                    print '完成初始化'
+
+                # 检测该分区是否存在
+                check_partition_sql = "select table_name from tb_copy_data_log where table_name='" + table_name + "' and partition_time='%s\'" % (
+                    partition_date)
+                print check_partition_sql
+                check_partition_result = conn_db.select(check_partition_sql)
+                if not check_partition_result:
+                    # 插入分区
+                    insert_table_sql = "insert into tb_copy_data_log (data_source,table_name,partition_type,partition_time,copy_status,chk_status,start_time,end_time) values('%s','%s','%s','%s','%s','%s','%s','%s')" % (
+                        config.data_source, table_name, config.partition_statis_date, partition_date,
+                        config.copy_status_1,
+                        config.chk_status_0, now_time, '0')
+                    print '插入记录初始化：', insert_table_sql
+                    check_table_result = conn_db.insert(insert_table_sql)
+
+                # 检测同步状态
+                check_status_sql = " select table_name from tb_copy_data_log where table_name='" + table_name + "' and partition_time= '" + partition_date + "' and copy_status = '" + config.copy_status_0 + "\'"
+
+                print check_status_sql
+                select_result = conn_db.select(check_status_sql)
+
+                print '检测结果：', select_result
+
+                # 结果判空
+                if select_result:
+
+                    return True
+                else:
+                    return False
+
+    # 添加分区，清理数据，优化之后不需要添加分区
     def add_partition(self, table_name, partition_date):
-        # 生成周期
-        # for i in ()
-
-        # 重建分区
-        delete_partition_sql = "alter table " + table_name + " drop if  exists partition (" + config.partition_statis_date + "=" + partition_date + ");"
-        delete_partition_sql_sh = config.excute_hive_sh + delete_partition_sql + "\'"
-
-        # 先测试单周期
-        add_partition_sql = "alter table " + table_name + " add if not exists partition (" + config.partition_statis_date + "=" + partition_date + ");"
-
-        print add_partition_sql
-
-        add_partition_sql_sh = config.excute_hive_sh + add_partition_sql + "\'"
-
-        print '分区已添加：', delete_partition_sql_sh, add_partition_sql_sh
-
         # 清理数据
         truncate_table_sql = "truncate table " + table_name + ';'
-
-        print truncate_table_sql
-
         truncate_table_sql_sh = config.excute_hive_sh + truncate_table_sql + "\'"
         print '清理数据', truncate_table_sql_sh
-
-        os.popen(delete_partition_sql_sh)
-        os.popen(add_partition_sql_sh)
-
         os.popen(truncate_table_sql_sh)
 
+        # 开始迁移
         self.copy_data(table_name, partition_date)
 
     # 构造迁移语句
     def copy_data(self, table_name, partition_date):
-        # hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day/statis_date=20170617 hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/tb_si_cu_voma_limit_whitelist_day
+        # 记录开始迁移时间
         st_time = date_time.datetime.now()
         print "[info]" + str(st_time), ":表数据迁移开始:", table_name, "分区:", partition_date
-        # distcp_sh = "hadoop distcp -bandwidth " + config.bandwidth + " -m  " + config.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/" + config.partition_statis_date + "=" + partition_date + " hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
-        distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/* hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
 
-        print '数据迁移命令：', distcp_sh
+        # 全量表
+        if self.input_batch == '1':
+            distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/* hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
+            print '全量表-数据迁移命令：', distcp_sh
+            os.popen(distcp_sh)
 
-        os.popen(distcp_sh)
+        # 非全量表,todo,分区类型获取
+        else:
+            # hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day/statis_date=20170617 hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/tb_si_cu_voma_limit_whitelist_day
+
+            distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/" + config.partition_statis_date + "=" + partition_date + " hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
+            # distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/* hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
+
+            print '非全量表-数据迁移命令：', distcp_sh
+
+            os.popen(distcp_sh)
         end_time = date_time.datetime.now()
         print "[info]" + str(end_time), ":表数据迁移结束:", table_name, "分区:", partition_date
         print '共耗时:', end_time - st_time, 'S'
@@ -216,14 +279,22 @@ class CopyData():
 
     # 数据迁移完成更新数据库记录
     def copy_ok(self, table_name, partition_date, st_time, end_time):
-        update_status_sql = "update tb_copy_data_log set copy_status ='" + config.copy_status_2 + "',start_time='" + str(
-            st_time)[
-                                                                                                                     0:19] + "',end_time='" + str(
-            end_time)[0:19] + "' where table_name='" + table_name + "' and partition_time='" + partition_date + "\'"
+        # 全量表
+        if self.input_batch == '1':
+            update_status_sql = "update tb_copy_data_log set copy_status ='" + config.copy_status_2 + "',start_time='" + str(
+                st_time)[0:19] + "',end_time='" + str(end_time)[
+                                                  0:19] + "' where table_name='" + table_name + "\'"
 
-        print '更新sql:', update_status_sql
+        else:
 
-        conn_db.insert(update_status_sql)
+            update_status_sql = "update tb_copy_data_log set copy_status ='" + config.copy_status_2 + "',start_time='" + str(
+                st_time)[
+                                                                                                                         0:19] + "',end_time='" + str(
+                end_time)[0:19] + "' where table_name='" + table_name + "' and partition_time='" + partition_date + "\'"
+
+            print '更新sql:', update_status_sql
+
+            conn_db.insert(update_status_sql)
 
         # 更新now_date
         update_task_sql = "update tb_copy_get_task set now_partition ='" + partition_date + "' where table_name='" + table_name + "\'"
@@ -237,6 +308,7 @@ class CopyData():
             print '到达早上6点,自动停止迁移任务,当前时间:', str(date_time.datetime.now())[0:19]
             exit(0)
 
+    # 修复表
     def add_info(self, table_name, partition_date):
         add_info_sql = "ANALYZE TABLE " + table_name + " partition(" + config.partition_statis_date + "= " + partition_date + " ) COMPUTE STATISTICS;"
 
