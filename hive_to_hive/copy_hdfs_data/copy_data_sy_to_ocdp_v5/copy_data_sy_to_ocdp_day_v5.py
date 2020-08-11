@@ -10,7 +10,7 @@
 # 修改日志：20200810
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python copy_data_sy_to_ocdp_day.py
+# 程序调用格式：# python copy_data_sy_to_ocdp.py 1 0 20 30
 # ***************************************************************************
 
 import os
@@ -30,7 +30,7 @@ import config
 # 分区表直接拷贝文件夹
 # 打印日志
 
-class Copy_Data():
+class CopyData():
 
     # 参数初始化
     def __init__(self, input_batch, size_type, bandwidth, map_num, all=None):
@@ -46,9 +46,9 @@ class Copy_Data():
         get_task_sql = ''
 
         # 全量表
-        if self.all == 'all':
+        if self.input_batch == '1':
             # 获取可以稽核表名列表
-            get_task_sql = "select table_name  from tb_copy_get_task where start_partition is not null and end_partition is not null and ifnull(now_partition ,start_partition) <= end_partition and size_type='" + +"' and  migration_batch= '" + input_batch + "';"
+            get_task_sql = "select table_name  from tb_copy_get_task where  size_type='" + self.size_type + "' and  migration_batch= '" + input_batch + "';"
 
         else:
 
@@ -66,7 +66,7 @@ class Copy_Data():
             print '表名：', table_name
 
             # 调用迁移
-            self.input_date(table_name)
+            # self.input_date(table_name)
 
         print '无迁移任务'
 
@@ -249,11 +249,8 @@ class Copy_Data():
         print '[info] ', str(date_time.datetime.now())[0:19], ':收集元数据库统计信息完成：', table_name, '分区：', partition_date
 
 
-# 非全量表
-# python copy_data_sy_to_ocdp.py 0 0 20 30
-
 # 全量表
-# python copy_data_sy_to_ocdp.py 0 0 20 30 all
+# python copy_data_sy_to_ocdp.py 1 0 20 30
 
 # 启动
 if __name__ == '__main__':
@@ -261,7 +258,7 @@ if __name__ == '__main__':
     input_length = len(sys.argv)
     print 'input_str: ', len(sys.argv)
 
-    if input_length == 4:
+    if input_length == 5:
 
         # 批次号，分批处理
         input_batch = sys.argv[1]
@@ -275,32 +272,8 @@ if __name__ == '__main__':
         # map数，限制资源
         map_num = sys.argv[4]
 
-        copy_data_object = Copy_Data(input_batch, size_type, bandwidth, map_num)
-
+        copy_data_object = CopyData(input_batch, size_type, bandwidth, map_num)
         copy_data_object.read_table_name()
-
-    # 全量表
-    elif input_length == 5:
-        if sys.argv[5] == 'all':
-            # 批次号，分批处理
-            input_batch = sys.argv[1]
-
-            # 文件大小，区分文件大小
-            size_type = sys.argv[2]
-
-            # 带宽，限制带宽
-            bandwidth = sys.argv[3]
-
-            # map数，限制资源
-            map_num = sys.argv[4]
-
-            # 全量表
-            all = 'all'
-
-            copy_data_object = Copy_Data(input_batch, size_type, bandwidth, map_num, all)
-
-            copy_data_object.read_table_name()
-
 
     else:
         print '输入参数有误'
