@@ -34,6 +34,9 @@ copy_status_0 = '0'
 copy_status_1 = '1'
 # 同步完成
 copy_status_2 = '2'
+# 同步失败
+copy_status_3 = '3'
+
 
 # 稽核状态
 # 未稽核
@@ -41,7 +44,9 @@ chk_status_0 = ''
 # 数据源
 data_source = 'sy'
 
+# 全量表
+all_table = 'all'
+
 # 带宽限制参数
 bandwidth = '30'
 map_num = '50'
-
