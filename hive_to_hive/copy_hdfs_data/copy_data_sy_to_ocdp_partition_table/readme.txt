@@ -23,3 +23,7 @@ v4
 20200812
 v5
 
+20200815
+copy_data_sy_ocdp_partition_table_v2_config
+1.网络带宽及map数添加到配置表里
+2.添加信息收集
