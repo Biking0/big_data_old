@@ -120,6 +120,7 @@ class CopyData():
         # distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/* hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
 
         result = os.system(distcp_sh)
+        # result = '0'
 
         print '#迁移命令:', distcp_sh
 

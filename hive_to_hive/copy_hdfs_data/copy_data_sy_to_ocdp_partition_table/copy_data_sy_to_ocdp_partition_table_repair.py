@@ -162,10 +162,13 @@ class CopyData():
 
         conn_db.insert(update_status_sql)
 
-        print '数据迁移同步,更新同步状态完成:', table_name, partition_date
-        if str(date_time.datetime.now())[11:13] == '06':
-            print '到达早上6点,自动停止迁移任务,当前时间:', str(date_time.datetime.now())[0:19]
-            exit(0)
+        # 修复表
+        self.repair_table(table_name)
+
+        # print '数据迁移同步,更新同步状态完成:', table_name, partition_date
+        # if str(date_time.datetime.now())[11:13] == '06':
+        #     print '到达早上6点,自动停止迁移任务,当前时间:', str(date_time.datetime.now())[0:19]
+        #     exit(0)
 
     # 修复表
     def repair_table(self, table_name):
