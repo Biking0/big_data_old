@@ -21,7 +21,7 @@ import sys
 # 2.过滤符号排序，输出到文件
 
 # 连接ocdp集群
-excute_ocdp_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e "
+excute_ocdp_sh = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e "
 
 
 def show_tables():
@@ -36,16 +36,16 @@ def show_tables():
     for i in range(len(show_tables_list)):
 
         show_tables_list[i] = show_tables_list[i].replace('\n', '').replace(' ', '').replace('|', '')
-        if ('+' in show_tables_list[i]) or ('tab_name' in show_tables_list[i]):
+        if ('+' in show_tables_list[i]) or ('tab_name' in show_tables_list[i]) or ('bakup' in show_tables_list[i]):
             continue
         result_list.append(show_tables_list[i])
 
     # result_list=result_list.sorted()
 
-    result_list= sorted(result_list)
-    ocdp_table_name=open('./ocdp_table_name.txt','w')
+    result_list = sorted(result_list)
+    ocdp_table_name = open('./ocdp_table_name.txt', 'w')
     for i in range(len(result_list)):
-        ocdp_table_name.write(result_list[i]+'\n')
+        ocdp_table_name.write(result_list[i] + '\n')
 
 
 show_tables()

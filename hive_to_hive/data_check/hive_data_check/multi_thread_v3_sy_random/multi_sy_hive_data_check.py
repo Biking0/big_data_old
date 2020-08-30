@@ -414,7 +414,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 40
+    a = 100
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程

@@ -28,7 +28,7 @@ from Queue import Queue
 
 # 生产环境
 # excute_desc_sh = "beeline -u 'jdbc:hive2://192.168.190.88:10000/csap' -n hive -p %Usbr7mx -e "
-excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e "
+excute_desc_sh = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e "
 
 
 # 测试环境
@@ -38,7 +38,7 @@ excute_desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -
 # 生成desc表结构文件
 def create_desc(table_name):
     # 生产环境
-    desc_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
+    desc_sh = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e 'desc  " + table_name + ' \' > /home/ocdp/hyn/data_check/hive_data_check/' + table_name + '.txt'
 
     # 测试环境
     # desc_sh = "beeline -u 'jdbc:hive2://172.22.248.19:10000/default' -n csap -p @WSX2wsx -e 'desc  " + table_name + ' \' > ./' + table_name + '.txt'
@@ -331,7 +331,7 @@ def export_chk_result(table_name):
 def distcp_sy_to_ocdp():
     # ocdp集群添加分区
 
-    add_partition_sh = "beeline -u 'jdbc:hive2://hua-dlzx2-a0202:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
+    add_partition_sh = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e " + 'alter table '
 
 
 # 对比数据，废弃该方法

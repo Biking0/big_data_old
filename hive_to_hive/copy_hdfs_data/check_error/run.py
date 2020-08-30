@@ -23,8 +23,8 @@ import check_error
 if __name__ == '__main__':
 
     while True:
-        check_error.get_error_log()
+
         # 休息10分钟，600
 
-        print 'sleep 600s'
-        time.sleep(900)
+        print 'sleep 3s'
+        time.sleep(3)

@@ -21,10 +21,10 @@ import datetime as date_time
 
 day = 'statis_date'
 
-new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1q@W -e ' "
+new_hive = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e ' "
 
-start_date = '20200811'
-end_date = '20200831'
+start_date = '20200825'
+end_date = '20200930'
 # 日期格式
 day_format = '%Y%m%d'
 

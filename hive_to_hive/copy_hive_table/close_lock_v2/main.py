@@ -26,16 +26,17 @@ new_hive = "beeline -u 'jdbc:hive2://172.19.168.101:10000/csap' -n ocdp -p 1q2w1
 
 def read_table_name():
     f = open('./test_table_name.txt', 'r')
-    i = 1
     for line in f.readlines():
         line = line.strip('\n')
 
-        print 1, ' #########################'
+        print ' #########################'
         print line
         copy_data(line)
 
         # 连续读表
         # break
+
+    print '无任务'
 
 
 # 重命名表
@@ -48,21 +49,20 @@ def rename_table(table_name):
 
     print 'rename_sql_sh', rename_sql_sh
 
-    # result = os.system(rename_sql_sh)
-    result = 0
+    result = os.system(rename_sql_sh)
 
     if result != 0:
         # 失败
         print '### error'
         error_file = open("./rename_error.txt", 'a+')
         now_time = date_time.datetime.now()
-        error_file.write(str(now_time) + " " + table_name)
+        error_file.write(str(now_time) + " " + table_name+"\n")
 
     else:
         # 成功
         ok_file = open("./rename_ok_file.txt", 'a+')
         now_time = date_time.datetime.now()
-        ok_file.write(str(now_time) + " " + table_name)
+        ok_file.write(str(now_time) + " " + table_name+"\n")
 
 
 # 建新表
@@ -81,13 +81,13 @@ def create_table_like(table_name):
         print '### error'
         error_file = open("./create_error.txt", 'a+')
         now_time = date_time.datetime.now()
-        error_file.write(str(now_time) + " " + table_name)
+        error_file.write(str(now_time) + " " + table_name+"\n")
 
     else:
         # 成功
         ok_file = open("./create_ok_file.txt", 'a+')
         now_time = date_time.datetime.now()
-        ok_file.write(str(now_time) + " " + table_name)
+        ok_file.write(str(now_time) + " " + table_name+"\n")
 
 
 # 复制数据
@@ -104,13 +104,13 @@ def copy_data(table_name):
         print '### error'
         error_file = open("./copy_error.txt", 'a+')
         now_time = date_time.datetime.now()
-        error_file.write(str(now_time) + " " + table_name)
+        error_file.write(str(now_time) + " " + table_name+"\n")
 
     else:
         # 成功
         ok_file = open("./copy_ok_file.txt", 'a+')
         now_time = date_time.datetime.now()
-        ok_file.write(str(now_time) + " " + table_name)
+        ok_file.write(str(now_time) + " " + table_name+"\n")
 
         repair_table(table_name)
 

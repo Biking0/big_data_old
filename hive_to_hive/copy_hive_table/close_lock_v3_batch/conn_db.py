@@ -31,44 +31,36 @@ def conn_db():
 
 # 查询数据
 def select(sql):
-    try:
-        conn = conn_db()
-        cursor = conn.cursor()
+    conn = conn_db()
+    cursor = conn.cursor()
 
-        cursor.execute(sql)
+    cursor.execute(sql)
 
-        result = cursor.fetchall()
-        cursor.close()
-        print type(result)
+    result = cursor.fetchall()
+    cursor.close()
+    print type(result)
 
-        # print result
-        return result
-    except Exception as e:
-        print '#数据库查询异常'
-        print e
+    # print result
+    return result
 
 
 # 插入及更新数据
 def insert(sql):
-    try:
-        conn = conn_db()
-        cursor = conn.cursor()
+    conn = conn_db()
+    cursor = conn.cursor()
 
-        cursor.execute(sql)
+    cursor.execute(sql)
 
-        result = cursor.fetchall()
+    result = cursor.fetchall()
 
-        conn.commit()
-        cursor.close()
-        conn.close()
+    conn.commit()
+    cursor.close()
+    conn.close()
 
-        print type(result)
+    print type(result)
 
-        # print result
-        return result
-    except Exception as e:
-        print '# 数据库插入异常'
-        print e
+    # print result
+    return result
 
 
 # select("show tables;")
