@@ -99,12 +99,17 @@ def get_end_string(table_name, database):
 
 # 获取int字段列表
 def get_int(table_name, database):
-    get_int_sql = "select  column_name from columns where  data_type ='int' and table_name=\'" + table_name + '\''
-    print 'get_int_sql:', get_int_sql
-    result = vt_conn_db.select(get_int_sql, database)
-    print result
+    try:
+        get_int_sql = "select  column_name from columns where  data_type ='int' and table_name=\'" + table_name + '\''
+        print 'get_int_sql:', get_int_sql
+        result = vt_conn_db.select(get_int_sql, database)
+        print result
 
-    return result
+        return result
+    except Exception as e:
+        print 'int error:', e
+
+        return 'int_error'
 
 
 # 创建sql，进行查询,输入表名，int字段
@@ -121,7 +126,7 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
     # 无分区
     if partition == '':
         partition = 'no_partition'
-        sql_part1 = "select 'DATA_SOURCE' as data_source,'" + table_name + "' as table_name,'" + partition + "', count(*)" + sql_part4
+        sql_part1 = "select 'DATA_SOURCE' as data_source,'" + database + '.' + table_name + "' as table_name,'" + partition + "', count(*)" + sql_part4
         sql_part3 = ",'REMARK',to_char(current_timestamp,'YYYY-MM-DD HH24:MI:SS') " + " from " + table_name + " ;"
 
     else:
@@ -185,47 +190,10 @@ def insert_table(table_name, sql, database):
 
     mysql_conn_db.insert(insert_sql)
 
-    # mysql_sh = config.mysql_exec + insert_sql + ";commit;\'"
-    #
-    # print 'mysql_sh:', mysql_sh
-    #
-    # os.system(mysql_sh)
-
-    # 插入vt库
-    # chk_table_name = 'chk_result'
-    #
-    # insert_sql = " insert into  " + chk_table_name + " " + sql
-    # print insert_sql
-    #
-    # conn_db.insert(insert_sql, database)
-
-    # 执行插入语句
-    # insert_sql_sh = excute_desc_sh + ' \" ' + insert_sql + ' \" '
-    # print insert_sql_sh
-    # os.popen(insert_sql_sh).readlines()
-
-    # 导出数据到文件
-    # export_chk_result(table_name)
-
-    # 苏研数据迁移到ocdp集群
-    # distcp_sy_to_ocdp()
-
-
-# 导出稽核结果表到文件
-def export_chk_result(table_name):
-    export_sql = "use csap; select DES_TBL,CYCLICAL,COUNT1,SUM1,REMARK from %s;" % (table_name)
-
-    export_sh = excute_desc_sh + ' \" ' + export_sql + ' \" ' + ' >> %s.txt' % (table_name)
-
-    print 'export_sh', export_sh
-
-    os.popen(export_sh).readlines()
-
 
 # 读取表名
 def read_table_name():
     f = open('./test_table_name.txt', 'r')
-    i = 50
 
     multi_list = []
 
@@ -237,7 +205,7 @@ def read_table_name():
         multi_list.append(line)
 
         # 开始解析
-        main(line)
+        # main(line)
 
         # 连续读取目标表
         # break
@@ -247,6 +215,9 @@ def read_table_name():
 
 # 遍历列表
 def read_list(num, data_queque, result_queque):
+    # 随机休息10s
+    time.sleep(random.randint(2, 5))
+
     for i in range(data_queque.qsize()):
         try:
             if not data_queque.empty():
@@ -254,7 +225,7 @@ def read_list(num, data_queque, result_queque):
                 table_name = data_queque.get()
 
                 # print 'table_name', table_name
-                # create_desc(table_name)
+                main(table_name)
 
         except Exception as e:
             print e
@@ -285,6 +256,21 @@ def multi_thread(multi_list):
         multi1.start()
 
 
-read_table_name()
+# 启动
+if __name__ == '__main__':
+
+    input_length = len(sys.argv)
+    print 'input_str: ', len(sys.argv)
+
+    if input_length == 2:
+        global partition_date
+        partition_date = sys.argv[1]
+        print 'partition_date', partition_date
+        read_table_name()
+
+    else:
+        print '输入参数有误'
+
+# read_table_name()
 # main("tb_dwd_ct_ngcs_teamworkcall_staffs_day")
 # main("tb_dwd_ct_85ct_call_list_hour")
