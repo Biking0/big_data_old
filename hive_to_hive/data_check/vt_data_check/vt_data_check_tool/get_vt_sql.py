@@ -56,7 +56,7 @@ def check_table(table_name, database):
     try:
         check_table_sql = "select  * from columns where  table_name=\'" + table_name + '\''
 
-        print 'check_table_sql:', check_table_sql
+        # print 'check_table_sql:', check_table_sql
         result = vt_conn_db.select(check_table_sql, database)
 
         # print 'check_table:', result
@@ -78,7 +78,7 @@ def check_partition(table_name, partition_date, database):
 
     get_partition_sql = "select  column_name from columns where column_name='" + partition_str + "'   and table_name=\'" + table_name + '\''
 
-    print 'get_end_string_sql:', get_partition_sql
+    # print 'get_end_string_sql:', get_partition_sql
     result = vt_conn_db.select(get_partition_sql, database)
 
     # 无分区
@@ -94,10 +94,10 @@ def check_partition(table_name, partition_date, database):
 def get_end_string(table_name, database):
     get_end_string_sql = "select a.column_name from columns a inner join ( select table_schema,table_name,max(column_id) mx_column_id from columns where data_type like 'varchar%'  group by 1,2) b on a.column_id = b.mx_column_id and a.table_name=\'" + table_name + '\''
 
-    print 'get_end_string_sql:', get_end_string_sql
+    # print 'get_end_string_sql:', get_end_string_sql
     result = vt_conn_db.select(get_end_string_sql, database)
 
-    print result[0][0]
+    # print result[0][0]
     return result[0][0]
 
 
@@ -105,9 +105,9 @@ def get_end_string(table_name, database):
 def get_int(table_name, database):
     try:
         get_int_sql = "select  column_name from columns where  data_type ='int' and table_name=\'" + table_name + '\''
-        print 'get_int_sql:', get_int_sql
+        # print 'get_int_sql:', get_int_sql
         result = vt_conn_db.select(get_int_sql, database)
-        print result
+        # print result
 
         return result
     except Exception as e:
@@ -125,21 +125,21 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
     if end_string == '':
         sql_part4 = ",'no_string_col'"
     else:
-        sql_part4 = ",sum(length(" + end_string + ")),count("+end_string+") as end_string"
+        sql_part4 = ",sum(length(" + end_string + ")) as end_string_sum,count(" + end_string + ") as end_string_count"
 
     # 无分区
     if partition == '':
         partition = 'no_partition'
-        sql_part1 = "select '" + database + '.' + table_name + "' as table_name,'" + partition + "', count(*) as count1" + sql_part4
-        sql_part3 = ",  from " +  database + '.'+ table_name + " ;"
+        sql_part1 = "select '" + database + '.' + table_name + "' as table_name,'" + partition + "' as partition, count(*) as count1" + sql_part4
+        sql_part3 = "  from " + database + '.' + table_name + " ;"
 
     else:
         # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
         sql_part1 = "select '" + database + '.' + table_name + "'  as table_name,'" + partition.replace(
-            '\'', '') + "', count(*)  as count1 " + sql_part4
+            '\'', '') + "' as partition, count(*)  as count1 " + sql_part4
 
         # todo 无分区表，增量数据无法稽核，全表可稽核
-        sql_part3 = ", from " + database + '.'+ table_name + " where " + partition + ";"
+        sql_part3 = " from " + database + '.' + table_name + " where " + partition + ";"
 
     table_int_str = ''
     sql_part2 = ''
@@ -147,28 +147,29 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
     if len(table_int_list) == 0:
         print "无int字段"
         table_int_str = "'no_int'"
-        sql_part2 = ",%s" % (table_int_str)
+        sql_part2 = ",%s as int_count" % (table_int_str)
 
     elif len(table_int_list) == 1:
         table_int_str = "sum(%s)" % table_int_list[0][0]
-        sql_part2 = ",%s" % (table_int_str)
+        sql_part2 = ",%s as int_count" % (table_int_str)
     else:
         for i in range(len(table_int_list)):
             table_int_str = table_int_str + "sum(%s)||'_'||" % (table_int_list[i][0])
-            sql_part2 = ",%s" % (table_int_str[0:-7])
+            sql_part2 = ",%s as int_count" % (table_int_str[0:-7])
 
     # print 'table_int_str', table_int_str
 
     sql = sql_part1 + sql_part2 + sql_part3
 
-    print 'sql select :', sql
+    print 'sql select :\n'
+    print sql, '\n'
 
 
 # 启动
 if __name__ == '__main__':
 
     input_length = len(sys.argv)
-    print '输入数据库及表名，如: ',
+    print '输入数据库及表名，如: csapdw.table_name\n',
     print 'input_str: ', len(sys.argv)
 
     if input_length == 2:
