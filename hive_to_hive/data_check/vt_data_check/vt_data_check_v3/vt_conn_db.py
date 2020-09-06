@@ -45,7 +45,7 @@ def select(sql, database):
 
 
 # 并发问题，稽核结果存到vt
-def insert(sql,database):
+def insert(sql, database):
     conn = conn_db(database)
     cursor = conn.cursor()
 
