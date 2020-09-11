@@ -14,7 +14,7 @@
 # ***************************************************************************
 
 
-# vt
+# vt,test
 test_database = {'csapdwd': ['csapdwd''qaQA#3e4r1'],
                  'csapdws': ['csapdws', 'qaQA#3e4r1'],
                  'csapdwv': ['csapdwv', 'qaQA#3e4r3'],

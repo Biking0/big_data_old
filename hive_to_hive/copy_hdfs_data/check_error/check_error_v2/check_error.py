@@ -43,7 +43,7 @@ def check_partition(table_name, partition_type, partition_time, copy_status):
 
     check_result = os.system(check_sh)
 
-    # partitions not exist
+    # 分区不存在
     if check_result != 0:
         update_mysql(table_name, partition_time)
 

@@ -121,7 +121,7 @@ class CopyData():
 
         print '迁移过程参数', self.bandwidth, self.map_num
 
-        # 记录开始迁移时间
+        # 记录开始迁移时间172.19.168.100
         st_time = date_time.datetime.now()
         print "[info]" + str(st_time), ":表数据迁移开始:", table_name, "分区:", partition_date
 

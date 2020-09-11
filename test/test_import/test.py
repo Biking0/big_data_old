@@ -1,9 +1,13 @@
-b=2
+b=3
 
 if b==3:
-    import config1
-    print config1.a
+    import config1 as config
+
 
 else :
-    import config2
-    print config2.a
+    import config2 as config
+
+print config.a
+
+
+

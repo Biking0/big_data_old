@@ -10,7 +10,8 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：nohup python vt_data_check.py > nohup.out &
+# 程序调用格式：nohup python vt_data_check.py 20200905 1 >> nohup.out &
+# 程序调用格式：nohup python vt_data_check.py 20200905 2 >> test_nohup.out &
 # ***************************************************************************
 
 # 1. 分析hive库表结构，获取int字段，将所有表存到列表里
@@ -21,7 +22,6 @@ import os
 import sys
 import time
 import datetime
-import config
 import random
 import threading
 from Queue import Queue
@@ -30,6 +30,7 @@ import mysql_conn_db
 
 excute_desc_sh = "hive -e"
 partition_date = '20200828'
+config_num = ''
 
 
 def main(table_name):
@@ -56,7 +57,7 @@ def check_table(table_name, database):
     check_table_sql = "select  * from columns where  table_name=\'" + table_name + '\''
 
     print 'check_table_sql:', check_table_sql
-    result = vt_conn_db.select(check_table_sql, database)
+    result = vt_conn_db.select(check_table_sql, database, config_num)
 
     # print 'check_table:', result
     # 表不存在
@@ -75,7 +76,7 @@ def check_partition(table_name, partition_date, database):
     get_partition_sql = "select  column_name from columns where column_name='" + partition_str + "'   and table_name=\'" + table_name + '\''
 
     print 'get_end_string_sql:', get_partition_sql
-    result = vt_conn_db.select(get_partition_sql, database)
+    result = vt_conn_db.select(get_partition_sql, database, config_num)
 
     # 无分区
     if len(result) == 0:
@@ -88,10 +89,10 @@ def check_partition(table_name, partition_date, database):
 
 # 获取最后一个字符串
 def get_end_string(table_name, database):
-    get_end_string_sql = "select a.column_name from columns a inner join ( select table_schema,table_name,max(column_id) mx_column_id from columns where data_type like 'varchar%'  group by 1,2) b on a.column_id = b.mx_column_id and a.table_name=\'" + table_name + '\''
+    get_end_string_sql = "select a.column_name from columns a inner join ( select table_schema,table_name,max(ordinal_position) mx_ordinal_position from columns where data_type like 'varchar%'  and table_name='" + table_name + "'   group by 1,2) b on a.ordinal_position = b.mx_ordinal_position and a.table_name=\'" + table_name + '\''
 
     print 'get_end_string_sql:', get_end_string_sql
-    result = vt_conn_db.select(get_end_string_sql, database)
+    result = vt_conn_db.select(get_end_string_sql, database, config_num)
 
     print result[0][0]
     return result[0][0]
@@ -102,7 +103,7 @@ def get_int(table_name, database):
     try:
         get_int_sql = "select  column_name from columns where  data_type ='int' and table_name=\'" + table_name + '\''
         print 'get_int_sql:', get_int_sql
-        result = vt_conn_db.select(get_int_sql, database)
+        result = vt_conn_db.select(get_int_sql, database, config_num)
         print result
 
         return result
@@ -119,16 +120,16 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
 
     # end_string为空，该表无string类型字段
     if end_string == '':
-        sql_part4 = ",'no_string_col'"
+        sql_part4 = ",'no_string_col' as end_string_sum,count(" + end_string + ") as end_string_count"
     else:
-        sql_part4 = ",sum(length(" + end_string + "))"
+        sql_part4 = ",sum(length(" + end_string + "))  as end_string_sum,count(" + end_string + ")  as end_string_count"
 
     # 无分区
     if partition == '':
         partition = 'no_partition'
         sql_part1 = "select 'DATA_SOURCE' as data_source,'" + database + '.' + table_name + "' as table_name,'" + partition + "', count(*)" + sql_part4
         sql_part3 = ",'REMARK',to_char(current_timestamp,'YYYY-MM-DD HH24:MI:SS') " + " from " + table_name + " ;"
-
+    # 有分区
     else:
         # select 'DATA_SOURCE',table_name,'partition',count(*),concat(nvl(sum(id),''),nvl(sum(name),'')),'REMARK',from_unixtime(unix_timestamp()) from table_name where patitions='';
         sql_part1 = "select 'DATA_SOURCE' as data_source,'" + database + '.' + table_name + "'  as table_name,'" + partition.replace(
@@ -139,6 +140,7 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
 
     table_int_str = ''
     sql_part2 = ''
+
     # 无int字段
     if len(table_int_list) == 0:
         print "无int字段"
@@ -146,11 +148,11 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
         sql_part2 = ",%s" % (table_int_str)
 
     elif len(table_int_list) == 1:
-        table_int_str = "sum(%s)" % table_int_list[0][0]
+        table_int_str = "nvl(sum_float(%s),0)" % table_int_list[0][0]
         sql_part2 = ",%s" % (table_int_str)
     else:
         for i in range(len(table_int_list)):
-            table_int_str = table_int_str + "sum(%s)||'_'||" % (table_int_list[i][0])
+            table_int_str = table_int_str + "nvl(sum_float(%s),0)||'_'||" % (table_int_list[i][0])
             sql_part2 = ",%s" % (table_int_str[0:-7])
 
     print 'table_int_str', table_int_str
@@ -159,31 +161,20 @@ def create_sql(table_name, table_int_list, partition, end_string, database):
 
     print 'sql select :', sql
 
-    # 执行查询
-    select_sql_sh = excute_desc_sh + ' \" ' + sql + ' \"'
-    print select_sql_sh
-    # os.popen(select_sql_sh).readlines()
-
+    # 插入稽核结果表
     insert_table(table_name, sql, database)
-
-    # 删除表结构文本文件
-    delete_sh = 'rm ' + table_name + '.txt'
-    # os.popen(delete_sh).readlines()
 
 
 # 构造出sql，将查询结果插入稽核结果表中
 def insert_table(table_name, sql, database):
-    # 随机插入1-10稽核结果表
-    table_num = str(random.randint(1, 10))
-
-    # chk_table_name = 'chk_result_' + table_num
-
-    result = vt_conn_db.select(sql, database)
-    print result
+    # 执行查询
+    result = vt_conn_db.select(sql, database, config_num)
+    print '#查询结果：', result
 
     check_table_name = config.check_table_name
-    insert_sql = "insert into " + check_table_name + " (data_source,des_tbl,cyclical,count1,end_string_sum,sum1,remark,chk_dt,static_date) values('%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (
+    insert_sql = "insert into " + check_table_name + " (data_source,des_tbl,cyclical,count1,end_string_sum,end_string_count,sum_int,remark,chk_dt,static_date) values('%s','%s','%s','%s','%s','%s','%s','%s','%s','%s')" % (
         result[0][0], result[0][1], result[0][2], result[0][3], result[0][4], result[0][5], result[0][6], result[0][7],
+        result[0][8],
         partition_date)
 
     print 'insert_sql', insert_sql
@@ -246,7 +237,7 @@ def multi_thread(multi_list):
         data_queque.put(multi_list[i])
 
     # 设置并发数
-    a = 1
+    a = 20
     # list分块，调用多线程
     for i in range(a):
         # list分块，调用多线程
@@ -261,10 +252,26 @@ if __name__ == '__main__':
     input_length = len(sys.argv)
     print 'input_str: ', len(sys.argv)
 
-    if input_length == 2:
+    if input_length == 3:
+
+        # 日期参数处理
         global partition_date
+        global config
         partition_date = sys.argv[1]
-        print 'partition_date', partition_date
+
+        # 数据库参数处理
+        database = sys.argv[2]
+        if database == '1':
+            import config as config
+        elif database == '2':
+
+            import config_test as config
+
+            print '测试库', config.test_database
+        else:
+            print '输入数据库参数有误'
+        config_num = database
+        print 'partition_date', partition_date, config_num
         read_table_name()
 
     else:

@@ -14,11 +14,20 @@
 # ***************************************************************************
 
 import vertica_python
-import config
 
 
 # 根据表名选库
-def conn_db(database):
+def conn_db(database, config):
+    if config == '1':
+        import config as config
+    elif config == '2':
+
+        import config_test as config
+
+        print '测试库', config.test_database
+    else:
+        print '输入数据库参数有误'
+
     conn_info = {'host': config.vt_ip,
                  'port': 5433,
                  'user': database,
@@ -31,13 +40,14 @@ def conn_db(database):
     return conn
 
 
-def select(sql, database):
-    conn = conn_db(database)
+def select(sql, database, config):
+    conn = conn_db(database, config)
     cursor = conn.cursor()
     cursor.execute(sql)
 
     result = cursor.fetchall()
     cursor.close()
+    conn.close()
     print type(result)
 
     # print result
@@ -45,8 +55,8 @@ def select(sql, database):
 
 
 # 并发问题，稽核结果存到vt
-def insert(sql, database):
-    conn = conn_db(database)
+def insert(sql, database, config):
+    conn = conn_db(database, config)
     cursor = conn.cursor()
 
     cursor.execute(sql)
