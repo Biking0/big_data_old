@@ -73,7 +73,7 @@ class CopyData():
 
         # hadoop distcp -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/tb_si_cu_voma_limit_whitelist_day/statis_date=20170617 hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/tb_si_cu_voma_limit_whitelist_day
 
-        distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + self.table_name + "/" + self.partition_type + "=" + self.partition_date + " hdfs://172.19.168.100:8020/warehouse/tablespace/managed/hive/csap.db/" + self.table_name + "/"
+        distcp_sh = "hadoop distcp -bandwidth " + config.bandwidth + " -m  " + config.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + self.table_name + "/" + self.partition_type + "=" + self.partition_date + " hdfs://172.19.168.100:8020/warehouse/tablespace/managed/hive/csap.db/" + self.table_name + "/"
         # distcp_sh = "hadoop distcp -bandwidth " + self.bandwidth + " -m  " + self.map_num + " -pb -i hdfs://192.168.190.89:8020/apps/hive/warehouse/csap.db/" + table_name + "/* hdfs://172.19.168.4:8020/warehouse/tablespace/managed/hive/csap.db/" + table_name + "/"
 
         print '#迁移命令:', distcp_sh
