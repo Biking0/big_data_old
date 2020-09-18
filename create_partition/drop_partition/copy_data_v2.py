@@ -23,8 +23,8 @@ day = 'statis_date'
 
 new_hive = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e ' "
 
-start_date = '20200825'
-end_date = '20200930'
+start_date = '20200903'
+end_date = '20200914'
 # 日期格式
 day_format = '%Y%m%d'
 
@@ -59,8 +59,7 @@ def create_day_partion(table_name_list, day_list):
 
         # 分区时间
         for j in range(len(day_list)):
-            add_partion_sql = " alter table " + table_name_list[i] + " add if not exists partition(" + day + "=" + \
-                              day_list[j] + ");"
+            add_partion_sql = table_name_list[i] + "  " + day_list[j]
             add_partion_sql_sh = new_hive + add_partion_sql
             # print add_partion_sql_sh
 
