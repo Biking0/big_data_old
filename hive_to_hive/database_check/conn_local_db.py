@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：conn_db.py
+# 文件名称：conn_local_db.py
 # 功能描述：迁移Hive表
 # 输 入 表：
 # 输 出 表：
@@ -10,7 +10,7 @@
 # 修改日志：
 # 修改日期：
 # ***************************************************************************
-# 程序调用格式：python conn_db.py
+# 程序调用格式：python conn_local_db.py
 # ***************************************************************************
 
 import os
@@ -19,20 +19,20 @@ from datetime import datetime
 import datetime as date_time
 import pymysql
 
-mysql_sh = "mysql -h ritds-dataos.mysql.svc.cs1-hua.hpc -P 20001 -u dataos_dev -pqXliH9*Ro#qDGomY dataos_dev -e ' "
+mysql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e ' "
 
 
 # 连接
 def conn_db():
-    conn = pymysql.connect(host="ritds-dataos.mysql.svc.cs1-hua.hpc", port=20001, user="dataos_dev",
-                           passwd="qXliH9*Ro#qDGomY", db="dataos_dev", charset="utf8")
+    conn = pymysql.connect(host="172.19.168.22", port=3308, user="zhao", passwd="zhao", db="zhao", charset="utf8")
+
 
     return conn
 
 
 def select(sql):
     conn = conn_db()
-    cursor = conn.cursor()
+    cursor=conn.cursor()
 
     cursor.execute(sql)
 
@@ -61,7 +61,6 @@ def insert(sql):
     # print result
     return result
 
+# select("show tables;")
 
-# print select("show tables;")
-
-# insert("insert into test (id) values ('123')")
+insert("insert into test (id) values ('123')")
