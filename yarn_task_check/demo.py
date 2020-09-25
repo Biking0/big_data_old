@@ -30,6 +30,7 @@ rm = ResourceManager(service_endpoints=['http://172.19.168.100:8088', 'http://17
 # 过滤重要任务
 ats = 'ats'
 thritf = 'Thrift'
+dis='dis'
 
 # 3个小时之前
 # run_time = 10800
@@ -42,7 +43,7 @@ run_time = 86400
 for i in rm.cluster_applications().data.get('apps').get('app'):
 
     # 过滤已完成状态，重要进程
-    if i.get('state') <> 'FINISHED' and (not ats in i.get('name')) and (not thritf in i.get('name')):
+    if i.get('state') <> 'FINISHED'  and ( dis in i.get('name')):
 
         start_time = i.get('startedTime') / 1000
 

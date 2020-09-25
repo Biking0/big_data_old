@@ -63,4 +63,4 @@ def insert(sql):
 
 # select("show tables;")
 
-insert("insert into test (id) values ('123')")
+# insert("insert into test (id) values ('123')")
