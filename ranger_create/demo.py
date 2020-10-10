@@ -1,7 +1,7 @@
 #!/usr/bin/env python
 # -*-coding:utf-8 -*-
 # ***************************************************************************
-# 文件名称：config.py
+# 文件名称：ranger_create.py
 # 功能描述：31省策略生成
 # 输 入 表：
 # 输 出 表：
@@ -13,6 +13,15 @@
 # 程序调用格式：python ranger_create.py
 # ***************************************************************************
 
+import os
+import sys
+import json
+import time
+import requests
+
+url = "http://172.19.168.231:6080/service/public/v2/api/policy"
+
+# 变量：策略名，数据库名，表名
 row_policy_json = {
     "isEnabled": True,
     "version": 1,
@@ -20,7 +29,7 @@ row_policy_json = {
     # 服务名
     "service": "csap_hive",
     # 策略名
-    "name": "testzh0924",
+    "name": "testhyn0924222",
     # 策略类型，2行级策略，0普通策略
     "policyType": 2,
     "policyPriority": 0,
@@ -584,3 +593,19 @@ row_policy_json = {
         ""
     ]
 }
+
+
+headers = {
+    'X-XSRF-HEADER': "valid",
+    'Content-Type': "application/json",
+    'Authorization': "Basic YWRtaW46MXEydyFRQFc=",
+    'Cache-Control': "no-cache",
+    'Postman-Token': "569270c0-c554-424a-9260-7cb22b3dfdd6"
+    }
+
+response = requests.request("POST", url, data=json.dumps(row_policy_json), headers=headers)
+
+print response.text
+print response.status_code
+
+
