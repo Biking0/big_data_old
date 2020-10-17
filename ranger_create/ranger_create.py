@@ -687,19 +687,28 @@ def main(policy_type, database, table_name):
 
     response = requests.request("POST", url, data=json.dumps(row_policy_json), headers=headers)
 
+    create_status = ''
     # 策略生成失败
     if response.status_code != 200:
         print '策略创建失败'
         print response.text
         print response.status_code
 
+        create_status = '1'
+
     else:
         print '策略创建成功', result_policy_json['name'], result_policy_json['resources']['database']['values'], \
             result_policy_json['resources']['table']['values']
 
-    # 更新mysql
-    ranger_sql='insert into table '
+        create_status = '0'
 
+    # 更新mysql
+    ranger_sql = "insert into  tb_ranger_policy (policy_name,db_name,table_name,create_status,policy_type,create_time)  values('%s','%s','%s','%s','%s','%s')" % (
+        result_policy_json['name'],database, table_name, create_status, policy_type, now_time)
+
+    print 'ranger_sql:', ranger_sql
+
+    conn_db.insert(ranger_sql)
 
 
 # 启动
