@@ -29,7 +29,7 @@ mysql_sh = "mysql -h 172.19.168.22 -P 3308 -u zhao -pzhao zhao -e ' "
 # ocdp_hive_sh = "beeline -u 'jdbc:hive2://172.19.40.241:10000/csap' -n ocdp -p 1q2w1q@W -e '"
 sy_hive_sh = "hive -e ' use csap;"
 ocdp_hive_sh = "hive -e ' use csap;"
-
+##
 # 稽核状态
 check_status_0 = '0'
 check_status_1 = '1'
